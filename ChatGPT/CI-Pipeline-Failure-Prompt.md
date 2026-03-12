@@ -13,7 +13,9 @@ Can you help me:
 2. Suggest steps to fix it.
 3. Recommend best practices to prevent similar CI failures in the future.
 
-## 📥 Sample Input
+----------------------------
+
+# 📥 Sample Input
 
 ### Pipeline Provider
 GitHub Actions
@@ -72,7 +74,7 @@ jobs:
         run: pytest
 ```
 
----
+----------------------------
 
 # 📤 Sample Output
 
