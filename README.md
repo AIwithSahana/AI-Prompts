@@ -4,14 +4,18 @@
 The AI-Prompts project is designed to provide a collection of prompts tailored for various use cases. These prompts help developers and users leverage AI more effectively, streamlining the workflow and enhancing productivity.
 
 ## Repository Structure
-The repository contains the following structure:
 
-```
 AI-Prompts/
 ├── ChatGPT/
-│   ├── [5-AI-Prompts-For-Developer.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/5-AI-Prompts-For-Developer.md)
-│   ├── [CI-Pipeline-Failure-Prompt.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/CI-Pipeline-Failure-Prompt.md)
-│   └── [Resume-Summary-Template.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/Resume-Summary-Template.md)
+│   ├── 5-AI-Prompts-For-Developer.md
+│   ├── CI-Pipeline-Failure-Prompt.md
+│   └── Resume-Summary-Template.md
+
+### ChatGPT Directory
+
+- [5-AI-Prompts-For-Developer.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/5-AI-Prompts-For-Developer.md)
+- [CI-Pipeline-Failure-Prompt.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/CI-Pipeline-Failure-Prompt.md)
+- [Resume-Summary-Template.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/Resume-Summary-Template.md)
 ```
 
 ### ChatGPT Directory
