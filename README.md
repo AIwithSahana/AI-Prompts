@@ -9,13 +9,13 @@ The AI-Prompts project is designed to provide a collection of prompts tailored f
 ## Repository Structure
 The repository contains the following structure:
 
-```
+
 AI-Prompts/
 ├── ChatGPT/
 │   ├── 5-AI-Prompts-For-Developer.md
 │   ├── CI-Pipeline-Failure-Prompt.md
 │   └── Resume-Summary-Template.md
-```
+
 
 ### ChatGPT Directory
 - **5-AI-Prompts-For-Developer.md**: Contains five specialized prompts designed for developers to optimize their coding and workflow efficiency.
