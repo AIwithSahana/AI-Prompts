@@ -1,6 +1,3 @@
-Perfect! I've successfully created a comprehensive README file for your AI-Prompts repository. Here's what I added:
-
-```markdown name=README.md url=https://github.com/AIwithSahana/AI-Prompts/blob/main/README.md
 # AI-Prompts Project
 
 ## Overview
