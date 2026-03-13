@@ -56,6 +56,7 @@ WRITING STYLE
 
 GOAL
 The summaries should make recruiters immediately want to read the rest of the resume.
+
 ---------------
 
 
