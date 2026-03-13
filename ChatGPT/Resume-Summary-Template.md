@@ -59,4 +59,4 @@ The summaries should make recruiters immediately want to read the rest of the re
 
 ---------------
 
-### For Sample Visit: https://techworldwithsahana.substack.com/p/2026-job-market-is-brutal-if-your
+### For More Details Visit: https://techworldwithsahana.substack.com/p/2026-job-market-is-brutal-if-your
