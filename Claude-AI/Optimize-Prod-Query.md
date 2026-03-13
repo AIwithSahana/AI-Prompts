@@ -1,5 +1,7 @@
 # PROMPT
 ---------
+
+```
 Production Database Query Optimization Prompt
 I’m facing a performance issue in our production database.
 Database Type & Version: [PostgreSQL/MySQL/MongoDB/etc.]
@@ -25,4 +27,6 @@ Please help me with:
 6.	Step-by-step safe rollout strategy
 7.	Long-term scaling recommendations
 Provide production-safe guidance, not generic advice.
+```
+
 ---------
