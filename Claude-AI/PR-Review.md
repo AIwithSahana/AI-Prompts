@@ -29,3 +29,5 @@ This prompt gives you a senior engineer’s eye on your code — in seconds.
 • Anything else that could cause a Monday morning production incident.
 
 ----
+
+### For More DEtails Read: [The One Step Most Engineers Skip Before Every PR](https://techworldwithsahana.substack.com/p/the-one-step-most-engineers-skip)
