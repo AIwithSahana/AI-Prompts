@@ -30,3 +30,5 @@ Provide production-safe guidance, not generic advice.
 ```
 
 ---------
+
+### For More Details Visit: https://techworldwithsahana.substack.com/p/slow-queries-killing-your-app
