@@ -1,4 +1,4 @@
-##PROMPT
+## PROMPT
 ----------------------
 
 I’m a [Role – Backend Dev / Frontend Dev / Full Stack].
