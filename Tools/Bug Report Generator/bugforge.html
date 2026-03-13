@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugForge — AI Bug Report Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --border: #dde3ea;
+    --text: #1a2332;
+    --text-muted: #7a8fa6;
+    --red: #e03030;
+    --cyan: #0099aa;
+    --blue: #1a7fd4;
+    --green: #00a65a;
+    --orange: #e07800;
+    --yellow: #d4a017;
+    --purple: #7c3aed;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(circle, #c8d0db 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon {
+    width:32px; height:32px;
+    background: var(--red);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue'; color:#fff; font-size:14px; letter-spacing:1px;
+    clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+  }
+  .logo-text { font-family:'Bebas Neue'; font-size:26px; letter-spacing:3px; color:var(--text); }
+  .logo-text span { color:var(--red); }
+  .header-meta { font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:16px; }
+  .header-badge { background:var(--bg); border:1px solid var(--border); padding:3px 10px; font-size:10px; letter-spacing:1px; color:var(--text-muted); }
+
+  /* ── LAYOUT ── */
+  .app-container { display:grid; grid-template-columns:460px 1fr; min-height:calc(100vh - 56px); }
+
+  /* ── LEFT PANE ── */
+  .form-pane {
+    background:var(--surface);
+    border-right:2px solid var(--border);
+    overflow-y:auto;
+    padding:24px 24px 48px;
+  }
+  .pane-title {
+    font-family:'Bebas Neue'; font-size:13px; letter-spacing:3px; color:var(--text-muted);
+    margin-bottom:18px; display:flex; align-items:center; gap:8px;
+  }
+  .pane-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .field-group { margin-bottom:18px; }
+  label { display:block; font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-muted); margin-bottom:5px; text-transform:uppercase; }
+
+  input[type="text"], input[type="email"], input[type="number"], textarea, select {
+    width:100%; background:var(--bg); border:1.5px solid var(--border);
+    color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12.5px;
+    padding:9px 11px; outline:none; transition:border-color 0.15s; resize:vertical;
+  }
+  input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus,
+  textarea:focus, select:focus { border-color:var(--blue); background:#fff; }
+  textarea { min-height:72px; }
+  select { appearance:none; cursor:pointer; }
+
+  /* ── CHIPS ── */
+  .chips-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .chip {
+    font-size:10px; padding:3px 9px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text-muted); cursor:pointer;
+    font-family:'JetBrains Mono'; letter-spacing:0.3px; transition:all 0.12s; white-space:nowrap;
+  }
+  .chip:hover { border-color:var(--blue); color:var(--blue); background:#eaf4fd; }
+  .chip.rc-db    { border-color:var(--orange); color:var(--orange); background:#fdf3e6; }
+  .chip.rc-auth  { border-color:var(--red);    color:var(--red);    background:#fdeaea; }
+  .chip.rc-net   { border-color:var(--cyan);   color:var(--cyan);   background:#e6f7f9; }
+  .chip.rc-null  { border-color:var(--yellow); color:#a07800;       background:#fffbe6; }
+  .chip.rc-logic { border-color:var(--purple); color:var(--purple); background:#f3eeff; }
+
+  /* ── HTTP METHOD BUTTONS ── */
+  .method-btns { display:flex; gap:5px; flex-wrap:wrap; }
+  .method-btn {
+    padding:6px 14px; font-family:'JetBrains Mono'; font-size:12px; font-weight:700;
+    border:2px solid var(--border); background:var(--bg); color:var(--text-muted);
+    cursor:pointer; transition:all 0.12s; letter-spacing:0.5px;
+  }
+  .method-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .method-btn.active-get    { border-color:var(--green);  background:#e6f7ef; color:var(--green); }
+  .method-btn.active-post   { border-color:var(--blue);   background:#e8f4fd; color:var(--blue); }
+  .method-btn.active-put    { border-color:var(--orange); background:#fdf3e6; color:var(--orange); }
+  .method-btn.active-patch  { border-color:var(--yellow); background:#fffbe6; color:#a07800; }
+  .method-btn.active-delete { border-color:var(--red);    background:#fdeaea; color:var(--red); }
+
+  /* ── STATUS CODE ── */
+  .status-row { display:flex; gap:8px; align-items:flex-start; }
+  .status-row input { width:100px; flex-shrink:0; }
+  .status-label {
+    flex:1; padding:9px 11px; border:1.5px solid var(--border);
+    background:var(--bg); font-size:12px; font-weight:700; color:var(--text-muted);
+    letter-spacing:0.5px; min-width:0;
+  }
+  .status-label.s2 { border-color:var(--green);  background:#e6f7ef; color:var(--green); }
+  .status-label.s3 { border-color:var(--cyan);   background:#e6f7f9; color:var(--cyan); }
+  .status-label.s4 { border-color:var(--orange); background:#fdf3e6; color:var(--orange); }
+  .status-label.s5 { border-color:var(--red);    background:#fdeaea; color:var(--red); }
+
+  /* ── SEVERITY GRID ── */
+  .severity-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .sev-item {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 10px; border:2px solid var(--border); background:var(--bg);
+    cursor:pointer; transition:all 0.12s; font-size:12px; font-weight:600; user-select:none;
+  }
+  .sev-item:hover { border-color:var(--blue); }
+  .sev-item.active-critical { border-color:var(--red);    background:#fdeaea; color:var(--red); }
+  .sev-item.active-high     { border-color:var(--orange); background:#fdf3e6; color:var(--orange); }
+  .sev-item.active-medium   { border-color:var(--yellow); background:#fffbe6; color:#a07800; }
+  .sev-item.active-low      { border-color:var(--green);  background:#e6f7ef; color:var(--green); }
+
+  /* ── PRIORITY ROW ── */
+  .priority-btns { display:flex; gap:5px; flex-wrap:wrap; }
+  .prio-btn {
+    flex:1; padding:7px 6px; font-size:10px; font-weight:700; letter-spacing:0.8px;
+    font-family:'JetBrains Mono'; border:2px solid var(--border); background:var(--bg);
+    color:var(--text-muted); cursor:pointer; text-align:center; text-transform:uppercase; transition:all 0.12s;
+  }
+  .prio-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .prio-btn.active-p1 { border-color:var(--red);    background:#fdeaea; color:var(--red); }
+  .prio-btn.active-p2 { border-color:var(--orange); background:#fdf3e6; color:var(--orange); }
+  .prio-btn.active-p3 { border-color:var(--blue);   background:#e8f4fd; color:var(--blue); }
+  .prio-btn.active-p4 { border-color:var(--green);  background:#e6f7ef; color:var(--green); }
+
+  /* ── STEPS LIST ── */
+  .steps-list { display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
+  .step-item { display:flex; gap:6px; align-items:center; }
+  .step-num {
+    width:24px; height:24px; background:var(--bg); border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:var(--text-muted); flex-shrink:0;
+  }
+  .step-input { flex:1; padding:7px 10px; font-size:12px; }
+  .step-del {
+    width:24px; height:24px; background:none; border:1.5px solid var(--border);
+    color:var(--text-muted); cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:all 0.12s;
+  }
+  .step-del:hover { border-color:var(--red); color:var(--red); background:#fdeaea; }
+  .add-step-btn {
+    padding:6px 12px; font-size:10px; font-weight:700; letter-spacing:1px;
+    font-family:'JetBrains Mono'; border:1.5px dashed var(--border); background:none;
+    color:var(--text-muted); cursor:pointer; transition:all 0.12s; text-transform:uppercase;
+  }
+  .add-step-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+
+  /* ── GENERATE BUTTON ── */
+  .gen-btn {
+    width:100%; padding:14px; font-family:'Bebas Neue'; font-size:20px;
+    letter-spacing:4px; background:var(--red); color:#fff; border:none;
+    cursor:pointer; transition:all 0.15s; margin-top:8px;
+  }
+  .gen-btn:hover { background:#c41f1f; transform:translateY(-1px); box-shadow:0 4px 16px rgba(224,48,48,0.3); }
+  .gen-btn:active { transform:translateY(0); }
+
+  /* ── RIGHT PANE ── */
+  .report-pane { overflow-y:auto; padding:28px 28px 60px; background:var(--bg); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:80%; gap:16px; color:var(--text-muted); text-align:center;
+  }
+  .empty-icon { font-family:'Bebas Neue'; font-size:72px; letter-spacing:4px; opacity:0.12; }
+  .empty-state p { font-size:12px; line-height:1.8; max-width:280px; }
+
+  /* ── LOADING ── */
+  .loading-state {
+    display:none; flex-direction:column; align-items:center; justify-content:center; height:80%; gap:20px;
+  }
+  .loading-text { font-family:'Bebas Neue'; font-size:28px; letter-spacing:4px; color:var(--text-muted); }
+  .loading-dots span {
+    display:inline-block; width:8px; height:8px; background:var(--red);
+    margin:0 3px; animation:dotpulse 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay:0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes dotpulse { 0%,80%,100%{opacity:0.15;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+  .loading-bar { width:280px; height:3px; background:var(--border); overflow:hidden; }
+  .loading-fill { height:100%; background:linear-gradient(90deg,var(--red),var(--orange)); animation:loadprogress 1.6s ease-out forwards; width:0%; }
+  @keyframes loadprogress { to { width:100%; } }
+
+  /* ── REPORT ── */
+  .report-content { display:none; animation:fadein 0.4s ease; }
+  @keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  /* REPORT HEADER */
+  .report-header {
+    background:var(--surface); border:2px solid var(--border);
+    padding:20px 24px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .bug-id-row { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .bug-id-badge {
+    background:var(--red); color:#fff; font-size:11px; font-family:'JetBrains Mono';
+    font-weight:700; letter-spacing:1px; padding:2px 10px;
+  }
+  .bug-ts { font-size:10px; color:var(--text-muted); letter-spacing:0.5px; }
+  .bug-title-main {
+    font-family:'Bebas Neue'; font-size:26px; letter-spacing:2px;
+    color:var(--text); margin:8px 0 10px; line-height:1.1;
+  }
+  .badges-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .badge {
+    padding:3px 10px; font-size:10px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase;
+  }
+  .badge-sev-critical { background:#fdeaea; border:1px solid var(--red);    color:var(--red); }
+  .badge-sev-high     { background:#fdf3e6; border:1px solid var(--orange); color:var(--orange); }
+  .badge-sev-medium   { background:#fffbe6; border:1px solid var(--yellow); color:#a07800; }
+  .badge-sev-low      { background:#e6f7ef; border:1px solid var(--green);  color:var(--green); }
+  .badge-p1 { background:#fdeaea; border:1px solid var(--red);    color:var(--red); }
+  .badge-p2 { background:#fdf3e6; border:1px solid var(--orange); color:var(--orange); }
+  .badge-p3 { background:#e8f4fd; border:1px solid var(--blue);   color:var(--blue); }
+  .badge-p4 { background:#e6f7ef; border:1px solid var(--green);  color:var(--green); }
+  .badge-get    { background:#e6f7ef; border:1px solid var(--green);  color:var(--green); }
+  .badge-post   { background:#e8f4fd; border:1px solid var(--blue);   color:var(--blue); }
+  .badge-put    { background:#fdf3e6; border:1px solid var(--orange); color:var(--orange); }
+  .badge-patch  { background:#fffbe6; border:1px solid var(--yellow); color:#a07800; }
+  .badge-delete { background:#fdeaea; border:1px solid var(--red);    color:var(--red); }
+  .badge-env  { background:var(--bg); border:1px solid var(--border); color:var(--text-muted); }
+  .badge-s2   { background:#e6f7ef; border:1px solid var(--green);  color:var(--green); }
+  .badge-s4   { background:#fdf3e6; border:1px solid var(--orange); color:var(--orange); }
+  .badge-s5   { background:#fdeaea; border:1px solid var(--red);    color:var(--red); }
+
+  /* ENDPOINT BLOCK */
+  .endpoint-block {
+    background:#1a2332; color:#e2e8f0; padding:12px 16px;
+    font-size:13px; font-family:'JetBrains Mono'; border-left:3px solid var(--blue);
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .ep-method { font-weight:700; }
+  .ep-path   { color:#9ecbff; }
+  .ep-arrow  { color:#6a737d; }
+  .ep-status { font-weight:700; }
+  .ep-status.s2 { color:#b5e853; }
+  .ep-status.s4 { color:#f8c555; }
+  .ep-status.s5 { color:#f97583; }
+
+  /* SECTION CARDS */
+  .section-card {
+    background:var(--surface); border:1.5px solid var(--border);
+    margin-bottom:14px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .section-head {
+    padding:9px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title {
+    font-family:'Bebas Neue'; font-size:13px; letter-spacing:2px;
+    color:var(--text-muted); display:flex; align-items:center; gap:6px;
+  }
+  .section-dot { width:7px; height:7px; border-radius:50%; }
+  .section-body { padding:16px; }
+
+  /* EXPECTED / ACTUAL SIDE BY SIDE */
+  .ea-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ea-block { overflow:hidden; }
+  .ea-label {
+    font-size:9px; font-weight:700; letter-spacing:1.5px; padding:5px 10px;
+    text-transform:uppercase;
+  }
+  .ea-label.expected { background:#e6f7ef; color:var(--green); }
+  .ea-label.actual   { background:#fdeaea; color:var(--red); }
+  .ea-code {
+    background:#1a2332; color:#cdd9e5; padding:12px; font-size:11px;
+    font-family:'JetBrains Mono'; white-space:pre-wrap; line-height:1.6;
+    border-top:2px solid;
+  }
+  .ea-code.expected { border-color:var(--green); }
+  .ea-code.actual   { border-color:var(--red); }
+
+  /* STEPS */
+  .steps-ol { list-style:none; padding:0; }
+  .steps-ol li {
+    display:flex; gap:10px; align-items:flex-start;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px;
+  }
+  .steps-ol li:last-child { border-bottom:none; }
+  .step-n {
+    width:22px; height:22px; background:var(--red); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; flex-shrink:0;
+  }
+
+  /* IMPACT GRID */
+  .impact-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .impact-item { background:var(--bg); border:1.5px solid var(--border); padding:12px 14px; }
+  .impact-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+  .impact-val { font-family:'Bebas Neue'; font-size:18px; letter-spacing:1px; }
+  .impact-val.crit { color:var(--red); }
+  .impact-val.high { color:var(--orange); }
+  .impact-val.med  { color:var(--yellow); }
+  .impact-val.low  { color:var(--green); }
+
+  /* ROOT CAUSE */
+  .root-cause-card {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-left:4px solid var(--blue); padding:18px 20px;
+    margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .rca-title { font-family:'Bebas Neue'; font-size:14px; letter-spacing:2px; color:var(--blue); margin-bottom:10px; }
+  .rca-body { font-size:12.5px; line-height:1.7; color:var(--text); }
+
+  /* FIX SUGGESTIONS */
+  .fix-card {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-left:4px solid var(--green); padding:18px 20px;
+    margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .fix-title { font-family:'Bebas Neue'; font-size:14px; letter-spacing:2px; color:var(--green); margin-bottom:10px; }
+  .fix-item { display:flex; gap:10px; margin-bottom:8px; font-size:12.5px; line-height:1.6; color:var(--text); }
+  .fix-bullet { color:var(--green); font-weight:700; flex-shrink:0; }
+
+  /* PAYLOAD BLOCK */
+  .code-block {
+    background:#1e2736; color:#cdd9e5; padding:14px 16px;
+    font-size:11.5px; font-family:'JetBrains Mono'; white-space:pre-wrap;
+    line-height:1.6; border-top:1px solid rgba(255,255,255,0.05);
+  }
+
+  /* FOOTER */
+  .report-footer {
+    background:var(--surface); border:1.5px solid var(--border);
+    padding:12px 20px; display:flex; align-items:center;
+    justify-content:space-between; flex-wrap:wrap; gap:8px;
+    font-size:11px; color:var(--text-muted); box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+
+  /* ACTION BUTTONS */
+  .action-bar { display:flex; gap:8px; flex-wrap:wrap; }
+  .action-btn {
+    padding:10px 20px; font-family:'JetBrains Mono'; font-size:11px;
+    font-weight:700; letter-spacing:1px; cursor:pointer;
+    border:2px solid var(--border); background:var(--surface);
+    color:var(--text); transition:all 0.12s; text-transform:uppercase;
+  }
+  .action-btn.copy-btn { border-color:var(--cyan); color:var(--cyan); }
+  .action-btn.copy-btn:hover { background:var(--cyan); color:#fff; }
+  .action-btn.pdf-btn  { border-color:var(--red); color:var(--red); }
+  .action-btn.pdf-btn:hover  { background:var(--red); color:#fff; }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:24px; right:24px; background:#1a2332;
+    color:#fff; padding:10px 20px; font-size:12px;
+    font-family:'JetBrains Mono'; opacity:0; pointer-events:none;
+    transition:opacity 0.3s; z-index:9999; border-left:3px solid var(--green);
+  }
+  .toast.show { opacity:1; }
+
+  /* DIVIDER */
+  .divider { height:1px; background:var(--border); margin:0 0 18px; }
+
+  /* PRINT */
+  @media print {
+    .form-pane, header, .action-bar { display:none !important; }
+    body { background:#fff !important; }
+    .app-container { display:block; }
+    .report-pane { padding:16px; overflow:visible; }
+    .code-block, .ea-code, .endpoint-block { white-space:pre-wrap !important; font-size:10px; }
+    .report-content { display:block !important; }
+    .section-card, .root-cause-card, .fix-card, .report-footer { page-break-inside:avoid; }
+    .ea-grid { display:grid; grid-template-columns:1fr 1fr; }
+    .impact-grid { display:grid; grid-template-columns:1fr 1fr; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width:900px) {
+    .app-container { grid-template-columns:1fr; }
+    .form-pane { border-right:none; border-bottom:2px solid var(--border); }
+    .ea-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">BF</div>
+    <div class="logo-text">Bug<span>Forge</span></div>
+  </div>
+  <div class="header-meta">
+    <span class="header-badge">AI-POWERED</span>
+    <span class="header-badge">BUG REPORT GENERATOR</span>
+    <span style="font-size:10px;">v1.3.0</span>
+  </div>
+</header>
+
+<div class="app-container">
+
+  <!-- ══ LEFT PANE ══ -->
+  <div class="form-pane">
+    <div class="pane-title">REPORT CONFIGURATION</div>
+
+    <!-- Bug Title -->
+    <div class="field-group">
+      <label>Bug Title</label>
+      <input type="text" id="bugTitle" placeholder="Describe the bug briefly…" autocomplete="off">
+      <div class="chips-row" id="titleChips"></div>
+    </div>
+
+    <!-- API Endpoint -->
+    <div class="field-group">
+      <label>API Endpoint</label>
+      <input type="text" id="endpoint" placeholder="/api/v1/…" autocomplete="off">
+      <div class="chips-row" id="endpointChips"></div>
+    </div>
+
+    <!-- HTTP Method -->
+    <div class="field-group">
+      <label>HTTP Method</label>
+      <div class="method-btns">
+        <button class="method-btn active-get"    data-method="GET">GET</button>
+        <button class="method-btn"               data-method="POST">POST</button>
+        <button class="method-btn"               data-method="PUT">PUT</button>
+        <button class="method-btn"               data-method="PATCH">PATCH</button>
+        <button class="method-btn"               data-method="DELETE">DELETE</button>
+      </div>
+    </div>
+
+    <!-- Status Code -->
+    <div class="field-group">
+      <label>HTTP Status Code</label>
+      <div class="status-row">
+        <input type="number" id="statusCode" placeholder="500" min="100" max="599">
+        <div class="status-label" id="statusLabel">Enter a status code</div>
+      </div>
+    </div>
+
+    <!-- Expected Response -->
+    <div class="field-group">
+      <label>Expected Response</label>
+      <textarea id="expectedResp" placeholder='{ "status": "success", "data": { … } }'></textarea>
+    </div>
+
+    <!-- Actual Response -->
+    <div class="field-group">
+      <label>Actual Response</label>
+      <textarea id="actualResp" placeholder='{ "error": "Internal Server Error", … }'></textarea>
+      <div class="chips-row" id="rcChips"></div>
+    </div>
+
+    <!-- Environment -->
+    <div class="field-group">
+      <label>Environment</label>
+      <select id="environment">
+        <option value="Production">Production</option>
+        <option value="Staging">Staging</option>
+        <option value="Development">Development</option>
+        <option value="QA">QA</option>
+      </select>
+    </div>
+
+    <!-- Severity -->
+    <div class="field-group">
+      <label>Severity</label>
+      <div class="severity-grid">
+        <div class="sev-item active-critical" data-sev="Critical">🔴 Critical</div>
+        <div class="sev-item" data-sev="High">🟠 High</div>
+        <div class="sev-item" data-sev="Medium">🟡 Medium</div>
+        <div class="sev-item" data-sev="Low">🟢 Low</div>
+      </div>
+    </div>
+
+    <!-- Priority -->
+    <div class="field-group">
+      <label>Priority</label>
+      <div class="priority-btns">
+        <button class="prio-btn active-p1" data-prio="P1">P1 Immediate</button>
+        <button class="prio-btn"           data-prio="P2">P2 High</button>
+        <button class="prio-btn"           data-prio="P3">P3 Normal</button>
+        <button class="prio-btn"           data-prio="P4">P4 Low</button>
+      </div>
+    </div>
+
+    <!-- Steps to Reproduce -->
+    <div class="field-group">
+      <label>Steps to Reproduce</label>
+      <div class="steps-list" id="stepsList"></div>
+      <button class="add-step-btn" id="addStepBtn">+ Add Step</button>
+    </div>
+
+    <!-- Payload / Headers -->
+    <div class="field-group">
+      <label>Request Payload / Headers (optional)</label>
+      <textarea id="payload" placeholder='{"Authorization":"Bearer …","Content-Type":"application/json"}' style="min-height:60px;"></textarea>
+    </div>
+
+    <!-- Reporter -->
+    <div class="field-group">
+      <label>Reporter Email</label>
+      <input type="email" id="reporter" placeholder="you@company.com">
+    </div>
+
+    <button class="gen-btn" id="generateBtn">⚡ GENERATE BUG REPORT</button>
+  </div>
+
+  <!-- ══ RIGHT PANE ══ -->
+  <div class="report-pane" id="reportPane">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">BUG</div>
+      <p>Fill in the bug details on the left and click Generate to produce a full AI-powered bug report with root cause analysis and fix suggestions.</p>
+    </div>
+    <div class="loading-state" id="loadingState">
+      <div class="loading-text">ANALYZING BUG</div>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div id="loadingMsg" style="font-size:11px;color:var(--text-muted);letter-spacing:1px;margin-top:4px;">Parsing response payload…</div>
+      <div class="loading-bar"><div class="loading-fill" id="loadingFill"></div></div>
+    </div>
+    <div class="report-content" id="reportContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+const state = {
+  method: 'GET',
+  severity: 'Critical',
+  priority: 'P1',
+  bugId: null
+};
+let stepCount = 0;
+
+// ── STATUS CODE MAP ────────────────────────────────────────────────────────────
+const STATUS_CODES = {
+  200:'OK',201:'Created',204:'No Content',301:'Moved Permanently',302:'Found',
+  304:'Not Modified',400:'Bad Request',401:'Unauthorized',403:'Forbidden',
+  404:'Not Found',405:'Method Not Allowed',408:'Request Timeout',
+  409:'Conflict',410:'Gone',422:'Unprocessable Entity',429:'Too Many Requests',
+  500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable',
+  504:'Gateway Timeout'
+};
+
+function statusClass(code) {
+  const n = parseInt(code);
+  if (n>=200&&n<300) return 's2';
+  if (n>=300&&n<400) return 's3';
+  if (n>=400&&n<500) return 's4';
+  if (n>=500)        return 's5';
+  return '';
+}
+
+// ── TITLE SUGGESTIONS ──────────────────────────────────────────────────────────
+const TITLE_PATTERNS = {
+  auth:   ['JWT token validation failing on /auth/login','OAuth2 callback returns 401 Unauthorized','Session token expiry not handled correctly'],
+  jwt:    ['JWT signature mismatch causes 403 on protected routes','Malformed JWT payload crashes token parser','JWT exp claim ignored — tokens never expire'],
+  db:     ['DB connection pool exhausted under load','Database query timeout on large result sets','Null pointer from ORM when relation not loaded'],
+  timeout:['API request timeout after 30s with no retry','Database query timeout causes cascading 500s','Gateway timeout 504 on upstream microservice call'],
+  null:   ['Null reference exception in response serializer','NullPointerException when user profile is empty','Unhandled null field crashes entire response'],
+  '500':  ['Unhandled exception returns raw 500 with stack trace','Internal server error on empty POST body','500 error swallowed — no logging or alerting'],
+  '404':  ['Route not found for valid resource ID','Soft-deleted record returns 404 instead of 410','Missing route handler causes 404 cascade'],
+  cors:   ['CORS preflight rejected on /api/v1/users','Missing Access-Control-Allow-Origin header','CORS policy blocks valid cross-origin requests'],
+  rate:   ['Rate limiter returns 429 without Retry-After header','IP-based throttle triggers on whitelisted clients','Rate limit resets incorrectly under concurrent load'],
+  payload:['Malformed JSON payload returns 400 without detail','Oversized payload crashes body parser middleware','Missing required field not validated — silent failure'],
+};
+
+// ── ENDPOINT SUGGESTIONS ────────────────────────────────────────────────────────
+const ENDPOINT_PATTERNS = {
+  user:   ['/api/v1/users/:id','/api/v1/users/me','/api/v1/users/:id/profile'],
+  auth:   ['/api/v1/auth/login','/api/v1/auth/refresh','/api/v1/auth/logout'],
+  order:  ['/api/v1/orders/:id','/api/v1/orders','/api/v1/orders/:id/status'],
+  product:['/api/v1/products/:id','/api/v1/products','/api/v1/products/search'],
+  payment:['/api/v1/payments','/api/v1/payments/:id/refund','/api/v1/billing/invoice'],
+  admin:  ['/api/v1/admin/users','/api/v1/admin/config','/api/v1/admin/reports'],
+  health: ['/health','/api/health','/api/v1/status'],
+  search: ['/api/v1/search','/api/v1/search?q=…','/api/v1/search/suggest'],
+  token:  ['/api/v1/auth/token','/api/v1/auth/verify','/api/v1/auth/refresh'],
+  upload: ['/api/v1/files/upload','/api/v1/media','/api/v1/attachments'],
+};
+
+// ── ROOT CAUSE DETECTION ────────────────────────────────────────────────────────
+const RC_PATTERNS = [
+  { re:/connection|pool|ECONNREFUSED|ETIMEDOUT|connect ETIMEDOUT/, label:'Root cause: DB connection failure', cls:'rc-db' },
+  { re:/NullPointer|null|undefined|Cannot read|TypeError/, label:'Root cause: Null reference / undefined', cls:'rc-null' },
+  { re:/Unauthorized|401|403|token|JWT|signature|invalid_token/, label:'Root cause: Auth / token failure', cls:'rc-auth' },
+  { re:/timeout|ETIMEDOUT|504|timed out|read timeout/, label:'Root cause: Network / timeout', cls:'rc-net' },
+  { re:/ENOENT|EACCES|permission|disk|file not found/, label:'Root cause: Filesystem error', cls:'rc-db' },
+  { re:/syntax|SyntaxError|JSON.parse|Unexpected token|invalid JSON/, label:'Root cause: JSON parse error', cls:'rc-null' },
+  { re:/duplicate|unique constraint|UNIQUE|already exists/, label:'Root cause: DB constraint violation', cls:'rc-db' },
+  { re:/logic|assertion|assert|unexpected state|wrong value/, label:'Root cause: Business logic error', cls:'rc-logic' },
+  { re:/CORS|cross-origin|Access-Control/, label:'Root cause: CORS misconfiguration', cls:'rc-net' },
+  { re:/memory|heap|OOM|out of memory|ENOMEM/, label:'Root cause: Memory exhaustion', cls:'rc-db' },
+];
+
+// ── ROOT CAUSE EXPLANATIONS ────────────────────────────────────────────────────
+function getRCAText(actualResp, statusCode, method) {
+  const code = parseInt(statusCode);
+  const text = (actualResp || '').toLowerCase();
+  if (/connection|pool|econnrefused/.test(text))
+    return `The API is failing to establish a connection to the database. This typically indicates the connection pool is exhausted under load, the database host is unreachable (network partition or misconfigured hostname), or the database service itself is down. The error propagates up through the ORM layer and is returned as an unhandled exception.`;
+  if (/nullpointer|null|undefined|cannot read/.test(text))
+    return `A null or undefined value is being accessed where a non-null object is expected. This commonly occurs when an optional database relation is not eagerly loaded, when a required request field passes validation but is not present in the serialization layer, or when a cache miss returns null and the calling code does not guard against it.`;
+  if (/unauthorized|token|jwt|signature/.test(text) || code===401||code===403)
+    return `The authentication or authorization check is failing. Possible causes include an expired or malformed JWT (incorrect signing secret, wrong algorithm, clock skew), missing or incorrect Authorization header, or a permissions model mismatch where the user's role does not include the required scope for this endpoint.`;
+  if (/timeout|timed out/.test(text) || code===504||code===408)
+    return `The request is exceeding the configured timeout threshold. This is often caused by a slow or unindexed database query, a blocking I/O operation in the request path, or a downstream microservice failing to respond within the expected window. Under high concurrency, thread/worker pool exhaustion can cause queued requests to time out.`;
+  if (/syntax|json.parse|unexpected token/.test(text))
+    return `The request payload contains malformed JSON or an unexpected data type that the server-side body parser cannot process. This may be caused by incorrect Content-Type headers, double-serialized JSON strings, or client-side encoding bugs. The server rejects the payload before it reaches business logic.`;
+  if (code===500)
+    return `An unhandled exception occurred in the request lifecycle. The server is returning a generic 500 without masking the internal error, which suggests missing global error handling middleware. This could be triggered by a failed assertion, an unexpected data shape from a third-party service, or a missing environment variable that is only evaluated at runtime.`;
+  if (code===404)
+    return `The requested resource or route could not be found. This may be a missing route definition, a soft-deleted record being accessed, incorrect route parameter binding, or a URL versioning mismatch between client and server.`;
+  return `The API returned an unexpected response. Based on the status code ${code} and response body, the most likely cause is a runtime error in the request handler, possibly due to unvalidated input, a missing dependency, or an unguarded external service call. Review server logs around the timestamp of this report for the full stack trace.`;
+}
+
+// ── FIX SUGGESTIONS ────────────────────────────────────────────────────────────
+function getFixSuggestions(actualResp, statusCode, deps) {
+  const code = parseInt(statusCode);
+  const text = (actualResp || '').toLowerCase();
+  if (/connection|pool|econnrefused/.test(text))
+    return [
+      'Add connection pool health checks and configure <code>pool.min</code> / <code>pool.max</code> in your ORM config.',
+      'Implement a circuit breaker around database calls to fail fast and return a 503 instead of a raw 500.',
+      'Add a retry strategy with exponential backoff (max 3 retries) for transient connection failures.',
+      'Ensure <code>DATABASE_URL</code> environment variable is correctly set and resolves in the target environment.'
+    ];
+  if (/nullpointer|null|undefined|cannot read/.test(text))
+    return [
+      'Add optional chaining (<code>obj?.field</code>) or null guards before accessing nested object properties.',
+      'Validate and transform the database response before passing it to the serializer layer.',
+      'Add runtime schema validation (e.g. Zod, Joi) to catch missing fields early in the request lifecycle.',
+      'Write a unit test for the null case to prevent regression.'
+    ];
+  if (/unauthorized|token|jwt|signature/.test(text) || code===401||code===403)
+    return [
+      'Verify the JWT signing secret matches between the issuer and the verifying service (check environment variables).',
+      'Add clock skew tolerance (<code>clockTolerance: 30</code>) in JWT verification options to handle slight time drift.',
+      'Return a structured 401 response with an <code>error_code</code> field (e.g. <code>TOKEN_EXPIRED</code>) to help clients handle refresh flows.',
+      'Audit the RBAC/permission model to ensure the user\'s role includes the required scope for this endpoint.'
+    ];
+  if (/timeout|timed out/.test(text) || code===504||code===408)
+    return [
+      'Add a database index on the columns used in the slow query\'s WHERE / JOIN clause.',
+      'Set explicit timeout values on HTTP client and database adapter (e.g. <code>timeout: 5000</code>) to prevent indefinite blocking.',
+      'Move long-running operations to a background job queue (e.g. BullMQ, Celery) and return a 202 Accepted with a job ID.',
+      'Add request timeout middleware (e.g. <code>connect-timeout</code>) to terminate hung requests and free workers.'
+    ];
+  if (code===500)
+    return [
+      'Add a global error handling middleware that catches unhandled exceptions and returns a safe 500 response without leaking stack traces.',
+      'Integrate structured logging (e.g. Winston, Pino) with a unique <code>requestId</code> per request to correlate errors in logs.',
+      'Add input validation at the controller layer before passing data to the service or ORM.',
+      'Review the stack trace in server logs immediately after the reproduction timestamp to identify the exact line of failure.'
+    ];
+  if (code===404)
+    return [
+      'Verify the route is registered and the HTTP method matches the request.',
+      'If the resource was soft-deleted, return 410 Gone instead of 404 to distinguish deletion from non-existence.',
+      'Add a catch-all 404 handler to return a structured JSON error instead of an HTML page.',
+      'Check URL versioning — confirm the client is targeting the correct API version prefix.'
+    ];
+  return [
+    'Add comprehensive request logging with a unique trace ID to correlate client errors with server logs.',
+    'Implement input validation middleware to reject malformed requests early with a 400 and a descriptive message.',
+    'Add health check and readiness probe endpoints to surface dependency failures before they cascade.',
+    'Write an integration test that reproduces this exact request to prevent regression.'
+  ];
+}
+
+// ── IMPACT ASSESSMENT ─────────────────────────────────────────────────────────
+function getImpact(severity) {
+  const map = {
+    Critical: { users:'All Users',   usersCls:'crit', data:'High Risk',   dataCls:'crit', uptime:'Degraded', uptimeCls:'crit', sla:'BREACHED',   slaCls:'crit' },
+    High:     { users:'Many Users',  usersCls:'high', data:'Moderate',    dataCls:'high', uptime:'Partial',  uptimeCls:'high', sla:'AT RISK',    slaCls:'high' },
+    Medium:   { users:'Some Users',  usersCls:'med',  data:'Low Risk',    dataCls:'med',  uptime:'Stable',   uptimeCls:'med',  sla:'MONITORING', slaCls:'med'  },
+    Low:      { users:'Few Users',   usersCls:'low',  data:'Negligible',  dataCls:'low',  uptime:'Stable',   uptimeCls:'low',  sla:'ON TRACK',   slaCls:'low'  },
+  };
+  return map[severity] || map['Medium'];
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────────
+function init() {
+  setupMethodBtns();
+  setupSeverity();
+  setupPriority();
+  setupStatusCode();
+  setupTitleSuggestions();
+  setupEndpointSuggestions();
+  setupRootCauseDetection();
+  initSteps();
+  document.getElementById('addStepBtn').addEventListener('click', addStep);
+  document.getElementById('generateBtn').addEventListener('click', generate);
+}
+
+// ── METHOD BUTTONS ──────────────────────────────────────────────────────────────
+function setupMethodBtns() {
+  document.querySelectorAll('.method-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.method-btn').forEach(b => b.className='method-btn');
+      state.method = btn.dataset.method;
+      const cls = { GET:'active-get',POST:'active-post',PUT:'active-put',PATCH:'active-patch',DELETE:'active-delete' };
+      btn.classList.add(cls[state.method]);
+    });
+  });
+}
+
+// ── SEVERITY ────────────────────────────────────────────────────────────────────
+function setupSeverity() {
+  document.querySelectorAll('.sev-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.sev-item').forEach(i => i.className='sev-item');
+      state.severity = item.dataset.sev;
+      const cls = { Critical:'active-critical',High:'active-high',Medium:'active-medium',Low:'active-low' };
+      item.classList.add(cls[state.severity]);
+    });
+  });
+}
+
+// ── PRIORITY ────────────────────────────────────────────────────────────────────
+function setupPriority() {
+  document.querySelectorAll('.prio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.prio-btn').forEach(b => b.className='prio-btn');
+      state.priority = btn.dataset.prio;
+      const cls = { P1:'active-p1',P2:'active-p2',P3:'active-p3',P4:'active-p4' };
+      btn.classList.add(cls[state.priority]);
+    });
+  });
+}
+
+// ── STATUS CODE ─────────────────────────────────────────────────────────────────
+function setupStatusCode() {
+  document.getElementById('statusCode').addEventListener('input', function() {
+    const code = this.value;
+    const label = document.getElementById('statusLabel');
+    const name = STATUS_CODES[parseInt(code)];
+    if (name) {
+      label.textContent = code + ' — ' + name;
+      label.className = 'status-label ' + statusClass(code);
+    } else if (code.length >= 3) {
+      label.textContent = code + ' — Unknown';
+      label.className = 'status-label';
+    } else {
+      label.textContent = 'Enter a status code';
+      label.className = 'status-label';
+    }
+  });
+}
+
+// ── TITLE SUGGESTIONS ───────────────────────────────────────────────────────────
+function setupTitleSuggestions() {
+  document.getElementById('bugTitle').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const container = document.getElementById('titleChips');
+    container.innerHTML = '';
+    if (!val) return;
+    const matches = [];
+    for (const [key, arr] of Object.entries(TITLE_PATTERNS)) {
+      if (val.includes(key)) matches.push(...arr);
+    }
+    [...new Set(matches)].slice(0,3).forEach(s => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = s;
+      chip.addEventListener('click', () => {
+        document.getElementById('bugTitle').value = s;
+        container.innerHTML = '';
+      });
+      container.appendChild(chip);
+    });
+  });
+}
+
+// ── ENDPOINT SUGGESTIONS ────────────────────────────────────────────────────────
+function setupEndpointSuggestions() {
+  document.getElementById('endpoint').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const container = document.getElementById('endpointChips');
+    container.innerHTML = '';
+    if (!val) return;
+    const matches = [];
+    for (const [key, arr] of Object.entries(ENDPOINT_PATTERNS)) {
+      if (val.includes(key) || key.includes(val.replace('/api/v1/','').split('/')[0])) matches.push(...arr);
+    }
+    [...new Set(matches)].slice(0,4).forEach(s => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = s;
+      chip.addEventListener('click', () => {
+        document.getElementById('endpoint').value = s;
+        container.innerHTML = '';
+      });
+      container.appendChild(chip);
+    });
+  });
+}
+
+// ── ROOT CAUSE DETECTION ────────────────────────────────────────────────────────
+function setupRootCauseDetection() {
+  document.getElementById('actualResp').addEventListener('input', function() {
+    const val = this.value;
+    const container = document.getElementById('rcChips');
+    container.innerHTML = '';
+    RC_PATTERNS.forEach(({ re, label, cls }) => {
+      if (re.test(val)) {
+        const chip = document.createElement('span');
+        chip.className = `chip ${cls}`;
+        chip.textContent = label;
+        container.appendChild(chip);
+      }
+    });
+  });
+}
+
+// ── STEPS ───────────────────────────────────────────────────────────────────────
+function initSteps() {
+  addStep('Send a POST request to the endpoint with a valid auth token.');
+  addStep('Observe the response — expected 200, received 500.');
+  addStep('Check server logs for error trace.');
+}
+
+function addStep(defaultVal='') {
+  stepCount++;
+  const list = document.getElementById('stepsList');
+  const item = document.createElement('div');
+  item.className = 'step-item';
+  item.dataset.idx = stepCount;
+  item.innerHTML = `
+    <div class="step-num">${list.children.length + 1}</div>
+    <input type="text" class="step-input" placeholder="Step ${list.children.length+1}…" value="${esc(defaultVal)}">
+    <button class="step-del" title="Remove step">×</button>`;
+  item.querySelector('.step-del').addEventListener('click', () => {
+    item.remove();
+    renumberSteps();
+  });
+  list.appendChild(item);
+}
+
+function renumberSteps() {
+  document.querySelectorAll('#stepsList .step-item').forEach((el, i) => {
+    el.querySelector('.step-num').textContent = i + 1;
+    el.querySelector('.step-input').placeholder = `Step ${i + 1}…`;
+  });
+}
+
+function esc(s) { return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── GENERATE ────────────────────────────────────────────────────────────────────
+function generate() {
+  document.getElementById('emptyState').style.display  = 'none';
+  document.getElementById('reportContent').style.display = 'none';
+  const ls = document.getElementById('loadingState');
+  ls.style.display = 'flex';
+
+  // Reset progress bar
+  const fill = document.getElementById('loadingFill');
+  fill.style.animation = 'none'; fill.offsetHeight;
+  fill.style.animation = 'loadprogress 1.6s ease-out forwards';
+
+  const msgs = ['Parsing response payload…','Identifying error signatures…','Running root cause analysis…','Building impact assessment…','Generating fix suggestions…'];
+  let mi=0; const msgEl=document.getElementById('loadingMsg');
+  const iv = setInterval(()=>{ msgEl.textContent=msgs[++mi%msgs.length]; },320);
+
+  setTimeout(()=>{
+    clearInterval(iv);
+    ls.style.display='none';
+    renderReport();
+  },1650);
+}
+
+function renderReport() {
+  const title    = document.getElementById('bugTitle').value.trim() || 'Untitled Bug';
+  const endpoint = document.getElementById('endpoint').value.trim() || '/api/v1/unknown';
+  const code     = document.getElementById('statusCode').value.trim() || '500';
+  const expected = document.getElementById('expectedResp').value.trim() || '{ "status": "success" }';
+  const actual   = document.getElementById('actualResp').value.trim() || '{ "error": "Internal Server Error" }';
+  const env      = document.getElementById('environment').value;
+  const payload  = document.getElementById('payload').value.trim();
+  const reporter = document.getElementById('reporter').value.trim() || 'anonymous@company.com';
+  const steps    = [...document.querySelectorAll('#stepsList .step-input')].map(i=>i.value.trim()).filter(Boolean);
+
+  const bugId  = 'BUG-' + Math.random().toString(36).substr(2,6).toUpperCase();
+  state.bugId  = bugId;
+  const ts     = new Date().toUTCString();
+  const codeName = STATUS_CODES[parseInt(code)] || 'Unknown';
+  const sCls     = statusClass(code);
+  const impact   = getImpact(state.severity);
+  const rcaText  = getRCAText(actual, code, payload);
+  const fixes    = getFixSuggestions(actual, code, payload);
+
+  const sevBadgeCls   = `badge-sev-${state.severity.toLowerCase()}`;
+  const prioBadgeCls  = `badge-p${state.priority.slice(1)}`;
+  const methBadgeCls  = `badge-${state.method.toLowerCase()}`;
+  const statBadgeCls  = sCls==='s5'?'badge-s5':sCls==='s4'?'badge-s4':sCls==='s2'?'badge-s2':'badge-env';
+
+  const stepsHTML = steps.length
+    ? `<ol class="steps-ol">${steps.map(s=>`<li><div class="step-n">${steps.indexOf(s)+1}</div><span>${s}</span></li>`).join('')}</ol>`
+    : '<p style="font-size:12px;color:var(--text-muted);">No steps provided.</p>';
+
+  const payloadHTML = payload
+    ? `<div class="section-card"><div class="section-head"><div class="section-title"><div class="section-dot" style="background:var(--purple)"></div>REQUEST PAYLOAD / HEADERS</div></div><div class="code-block">${esc(payload)}</div></div>`
+    : '';
+
+  const html = `
+  <div class="report-header">
+    <div class="bug-id-row">
+      <span class="bug-id-badge">${bugId}</span>
+      <span class="bug-ts">${ts}</span>
+    </div>
+    <div class="bug-title-main">${esc(title)}</div>
+    <div class="badges-row">
+      <span class="badge ${sevBadgeCls}">🔥 ${state.severity}</span>
+      <span class="badge ${prioBadgeCls}">${state.priority}</span>
+      <span class="badge ${methBadgeCls}">${state.method}</span>
+      <span class="badge ${statBadgeCls}">${code} ${codeName}</span>
+      <span class="badge badge-env">${env}</span>
+    </div>
+    <div class="endpoint-block">
+      <span class="ep-method" style="color:${methColor(state.method)}">${state.method}</span>
+      <span class="ep-path">${esc(endpoint)}</span>
+      <span class="ep-arrow">→</span>
+      <span class="ep-status ${sCls}">${code} ${codeName}</span>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-head">
+      <div class="section-title"><div class="section-dot" style="background:var(--blue)"></div>EXPECTED VS ACTUAL RESPONSE</div>
+    </div>
+    <div class="section-body" style="padding:0;">
+      <div class="ea-grid">
+        <div class="ea-block">
+          <div class="ea-label expected">✓ EXPECTED</div>
+          <div class="ea-code expected">${esc(expected)}</div>
+        </div>
+        <div class="ea-block">
+          <div class="ea-label actual">✗ ACTUAL</div>
+          <div class="ea-code actual">${esc(actual)}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-head">
+      <div class="section-title"><div class="section-dot" style="background:var(--orange)"></div>STEPS TO REPRODUCE</div>
+    </div>
+    <div class="section-body">${stepsHTML}</div>
+  </div>
+
+  ${payloadHTML}
+
+  <div class="section-card">
+    <div class="section-head">
+      <div class="section-title"><div class="section-dot" style="background:var(--red)"></div>IMPACT ASSESSMENT</div>
+    </div>
+    <div class="section-body">
+      <div class="impact-grid">
+        <div class="impact-item">
+          <div class="impact-label">Affected Users</div>
+          <div class="impact-val ${impact.usersCls}">${impact.users}</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-label">Data Risk</div>
+          <div class="impact-val ${impact.dataCls}">${impact.data}</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-label">Service Uptime</div>
+          <div class="impact-val ${impact.uptimeCls}">${impact.uptime}</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-label">SLA Status</div>
+          <div class="impact-val ${impact.slaCls}">${impact.sla}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="root-cause-card">
+    <div class="rca-title">⬡ AI ROOT CAUSE ANALYSIS</div>
+    <div class="rca-body">${rcaText}</div>
+  </div>
+
+  <div class="fix-card">
+    <div class="fix-title">⚙ AI FIX SUGGESTIONS</div>
+    ${fixes.map((f,i)=>`<div class="fix-item"><span class="fix-bullet">${i+1}.</span><span>${f}</span></div>`).join('')}
+  </div>
+
+  <div class="report-footer">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <span>Reporter: <strong>${esc(reporter)}</strong></span>
+      <span>${ts}</span>
+      <span>${bugId}</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-size:10px;background:var(--red);color:#fff;padding:3px 10px;font-weight:700;">BUG REPORT</span>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="action-btn copy-btn" id="copyBtn">[ COPY REPORT TO CLIPBOARD ]</button>
+    <button class="action-btn pdf-btn"  id="pdfBtn">[ DOWNLOAD AS PDF ]</button>
+  </div>`;
+
+  const rc = document.getElementById('reportContent');
+  rc.innerHTML = html;
+  rc.style.display = 'block';
+  document.title = `${bugId}.pdf`;
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(rc.innerText).then(()=>showToast('Report copied to clipboard!'));
+  });
+  document.getElementById('pdfBtn').addEventListener('click', () => {
+    document.title = `${bugId}.pdf`;
+    window.print();
+  });
+}
+
+function methColor(m) {
+  return { GET:'#b5e853',POST:'#79b8ff',PUT:'#f8c555',PATCH:'#f0d080',DELETE:'#f97583' }[m]||'#e2e8f0';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+init();
+</script>
+</body>
+</html>

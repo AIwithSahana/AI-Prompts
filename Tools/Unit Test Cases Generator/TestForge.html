@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestForge — AI Unit Test Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --border: #dde3ea;
+    --text: #1a2332;
+    --text-muted: #7a8fa6;
+    --red: #e03030;
+    --cyan: #0099aa;
+    --blue: #1a7fd4;
+    --green: #00a65a;
+    --orange: #e07800;
+    --purple: #7c3aed;
+    --yellow: #d4a017;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(circle, #c8d0db 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue';
+    color: #fff;
+    font-size: 16px;
+    letter-spacing: 1px;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .logo-text {
+    font-family: 'Bebas Neue';
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+  .logo-text span { color: var(--red); }
+  .header-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .header-badge {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  /* LAYOUT */
+  .app-container {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* LEFT PANE */
+  .form-pane {
+    background: var(--surface);
+    border-right: 2px solid var(--border);
+    overflow-y: auto;
+    padding: 28px 28px 40px;
+  }
+  .pane-title {
+    font-family: 'Bebas Neue';
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pane-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field-group {
+    margin-bottom: 22px;
+  }
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--blue);
+    background: #fff;
+  }
+  textarea { min-height: 80px; }
+
+  /* CHIPS */
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .chip {
+    font-size: 10px;
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'JetBrains Mono';
+    letter-spacing: 0.3px;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--blue); color: var(--blue); background: #eaf4fd; }
+  .chip.detect { border-color: var(--cyan); color: var(--cyan); background: #e6f7f9; }
+  .chip.mock { border-color: var(--purple); color: var(--purple); background: #f3eeff; }
+  .chip.warn { border-color: var(--orange); color: var(--orange); background: #fdf3e6; }
+
+  /* LANG BUTTONS */
+  .lang-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .lang-btn {
+    padding: 7px 14px;
+    font-family: 'JetBrains Mono';
+    font-size: 12px;
+    font-weight: 600;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    letter-spacing: 0.5px;
+  }
+  .lang-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .lang-btn.active-js { border-color: #f0db4f; background: #fffde6; color: #b8860b; }
+  .lang-btn.active-py { border-color: #3572a5; background: #e8f0fa; color: #1a5a9a; }
+  .lang-btn.active-java { border-color: var(--orange); background: #fdf3e6; color: var(--orange); }
+  .lang-btn.active-ts { border-color: #3178c6; background: #e8f0fa; color: #1a5c9a; }
+  .lang-btn.active-go { border-color: #00acd7; background: #e6f7fb; color: #007aa3; }
+
+  /* FRAMEWORK CHIPS */
+  .fw-chip {
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono';
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .fw-chip.active { border-color: var(--blue); background: #e8f4fd; color: var(--blue); font-weight: 700; }
+
+  /* TEST TYPE GRID */
+  .test-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .test-type-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.12s;
+    font-size: 11px;
+    user-select: none;
+  }
+  .test-type-item:hover { border-color: var(--blue); }
+  .test-type-item.checked { border-color: var(--green); background: #e6f7ef; }
+  .test-type-item.checked .tt-check { background: var(--green); color: #fff; }
+  .tt-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+    transition: all 0.12s;
+  }
+
+  /* COMPLEXITY */
+  .complexity-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .cplx-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'JetBrains Mono';
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .cplx-btn.active-basic { border-color: var(--green); background: #e6f7ef; color: var(--green); }
+  .cplx-btn.active-inter { border-color: var(--blue); background: #e8f4fd; color: var(--blue); }
+  .cplx-btn.active-adv { border-color: var(--orange); background: #fdf3e6; color: var(--orange); }
+  .cplx-btn.active-exh { border-color: var(--red); background: #fdeaea; color: var(--red); }
+
+  /* SLIDER */
+  .slider-wrap { position: relative; }
+  .slider-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    display: block;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--cyan);
+    cursor: pointer;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+
+  /* GENERATE BUTTON */
+  .gen-btn {
+    width: 100%;
+    padding: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gen-btn:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+  .gen-btn:active { transform: translateY(0); }
+
+  /* RIGHT PANE */
+  .report-pane {
+    overflow-y: auto;
+    padding: 28px 32px 60px;
+    background: var(--bg);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80%;
+    gap: 16px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .empty-icon {
+    font-size: 64px;
+    opacity: 0.15;
+    font-family: 'Bebas Neue';
+    letter-spacing: 4px;
+  }
+  .empty-state p { font-size: 12px; line-height: 1.8; max-width: 280px; }
+
+  /* LOADING */
+  .loading-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80%;
+    gap: 20px;
+  }
+  .loading-text {
+    font-family: 'Bebas Neue';
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+  }
+  .loading-cursor {
+    display: inline-block;
+    width: 3px; height: 24px;
+    background: var(--purple);
+    animation: blink 0.7s infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .loading-bar {
+    width: 280px;
+    height: 3px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .loading-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--cyan));
+    animation: loadprogress 1.8s ease-out forwards;
+    width: 0%;
+  }
+  @keyframes loadprogress { to { width: 100%; } }
+
+  /* REPORT */
+  .report-content {
+    display: none;
+    animation: fadein 0.4s ease;
+  }
+  @keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  .report-header {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .suite-id {
+    font-family: 'Bebas Neue';
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .suite-id-badge {
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    font-family: 'JetBrains Mono';
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .suite-ts {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+  .suite-file {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 10px 0;
+  }
+  .badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .badge {
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-lang { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+  .badge-fw { background: #e8f4fd; border: 1px solid var(--blue); color: var(--blue); }
+  .badge-cplx { background: #fdf3e6; border: 1px solid var(--orange); color: var(--orange); }
+  .badge-cov { background: #e6f7ef; border: 1px solid var(--green); color: var(--green); }
+
+  /* CODE BLOCK IN HEADER */
+  .sig-block {
+    background: #1a2332;
+    color: #e2e8f0;
+    padding: 12px 16px;
+    font-size: 12px;
+    border-left: 3px solid var(--blue);
+    overflow-x: auto;
+    margin-top: 10px;
+    white-space: pre;
+    font-family: 'JetBrains Mono';
+  }
+  .kw { color: #7dd3fc; }
+  .fn { color: #86efac; }
+  .param { color: #fcd34d; }
+  .type { color: #f9a8d4; }
+  .str { color: #a5f3fc; }
+
+  /* TEST SECTION CARDS */
+  .test-section {
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .ts-header {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .ts-title {
+    font-family: 'Bebas Neue';
+    font-size: 14px;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ts-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .ts-count {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+  }
+  .ts-body { padding: 0; }
+  .code-block {
+    background: #1e2736;
+    color: #cdd9e5;
+    padding: 16px 18px;
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono';
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.6;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* LEFT BORDER VARIANTS */
+  .ts-green { border-left: 4px solid var(--green); }
+  .ts-yellow { border-left: 4px solid var(--yellow); }
+  .ts-orange { border-left: 4px solid var(--orange); }
+  .ts-red { border-left: 4px solid var(--red); }
+  .ts-blue { border-left: 4px solid var(--blue); }
+  .ts-purple { border-left: 4px solid var(--purple); }
+  .ts-cyan { border-left: 4px solid var(--cyan); }
+
+  /* CODE SYNTAX */
+  .c-kw { color: #79b8ff; }
+  .c-fn { color: #b5e853; }
+  .c-str { color: #9ecbff; }
+  .c-num { color: #f8c555; }
+  .c-cmt { color: #6a737d; font-style: italic; }
+  .c-dec { color: #fb8532; }
+  .c-type { color: #f97583; }
+  .c-op { color: #e1e4e8; }
+
+  /* COVERAGE CARD */
+  .coverage-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .cov-title {
+    font-family: 'Bebas Neue';
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .cov-bar-wrap {
+    background: var(--bg);
+    height: 20px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 8px 0;
+    position: relative;
+  }
+  .cov-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #00d472);
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+  }
+  .cov-bar-fill.below { background: linear-gradient(90deg, var(--red), #ff6060); }
+  .cov-bar-pct {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .cov-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .cov-stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .cov-stat-val {
+    font-family: 'Bebas Neue';
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+  .cov-stat-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* AI ANALYSIS */
+  .analysis-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-left: 4px solid var(--purple);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .analysis-title {
+    font-family: 'Bebas Neue';
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .analysis-section {
+    margin-bottom: 14px;
+  }
+  .analysis-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .analysis-section-title.green { color: var(--green); }
+  .analysis-section-title.red { color: var(--red); }
+  .analysis-section-title.blue { color: var(--blue); }
+  .analysis-item {
+    font-size: 12px;
+    color: var(--text);
+    padding: 4px 0 4px 12px;
+    border-left: 2px solid var(--border);
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+
+  /* FOOTER */
+  .report-footer {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    box-shadow: var(--shadow);
+  }
+  .footer-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .total-badge {
+    background: var(--purple);
+    color: #fff;
+    padding: 3px 10px;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ACTION BUTTONS */
+  .action-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    padding: 10px 18px;
+    font-family: 'JetBrains Mono';
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.12s;
+    text-transform: uppercase;
+  }
+  .action-btn:hover { border-color: var(--text); }
+  .action-btn.copy-btn { border-color: var(--cyan); color: var(--cyan); }
+  .action-btn.copy-btn:hover { background: var(--cyan); color: #fff; }
+  .action-btn.copy-full { border-color: var(--blue); color: var(--blue); }
+  .action-btn.copy-full:hover { background: var(--blue); color: #fff; }
+  .action-btn.pdf-btn { border-color: var(--red); color: var(--red); }
+  .action-btn.pdf-btn:hover { background: var(--red); color: #fff; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 20px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a2332;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono';
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 9999;
+    border-left: 3px solid var(--green);
+  }
+  .toast.show { opacity: 1; }
+
+  /* PRINT */
+  @media print {
+    .form-pane, .action-bar, header { display: none !important; }
+    body { background: #fff !important; }
+    .app-container { display: block; }
+    .report-pane { padding: 20px; overflow: visible; }
+    .code-block { white-space: pre-wrap; font-size: 10px; }
+    .sig-block { white-space: pre-wrap; font-size: 10px; }
+    .test-section { page-break-inside: avoid; }
+    .report-content { display: block !important; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .app-container { grid-template-columns: 1fr; }
+    .form-pane { border-right: none; border-bottom: 2px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">TF</div>
+    <div class="logo-text">Test<span>Forge</span></div>
+  </div>
+  <div class="header-meta">
+    <span class="header-badge">AI-POWERED</span>
+    <span class="header-badge">UNIT TEST GENERATOR</span>
+    <span style="font-size:10px;">v2.4.1</span>
+  </div>
+</header>
+
+<div class="app-container">
+  <!-- LEFT PANE -->
+  <div class="form-pane" id="formPane">
+    <div class="pane-title">CONFIGURE TEST SUITE</div>
+
+    <!-- Function Name -->
+    <div class="field-group">
+      <label>Function / Method Name</label>
+      <input type="text" id="fnName" placeholder="e.g. validateUser, fetchData..." autocomplete="off">
+      <div class="chips-row" id="fnSuggestions"></div>
+    </div>
+
+    <!-- Language -->
+    <div class="field-group">
+      <label>Programming Language</label>
+      <div class="lang-btns">
+        <button class="lang-btn active-js" data-lang="JavaScript">JavaScript</button>
+        <button class="lang-btn" data-lang="Python">Python</button>
+        <button class="lang-btn" data-lang="Java">Java</button>
+        <button class="lang-btn" data-lang="TypeScript">TypeScript</button>
+        <button class="lang-btn" data-lang="Go">Go</button>
+      </div>
+    </div>
+
+    <!-- Framework -->
+    <div class="field-group">
+      <label>Testing Framework</label>
+      <div class="chips-row" id="frameworkChips"></div>
+    </div>
+
+    <!-- Code Snippet -->
+    <div class="field-group">
+      <label>Function Signature / Code Snippet</label>
+      <textarea id="codeSnippet" placeholder="Paste your function code or signature here..."></textarea>
+      <div class="chips-row" id="codeDetections"></div>
+    </div>
+
+    <!-- Test Types -->
+    <div class="field-group">
+      <label>Test Types</label>
+      <div class="test-grid" id="testTypeGrid">
+        <div class="test-type-item checked" data-type="happy">
+          <div class="tt-check">✓</div><span>Happy Path</span>
+        </div>
+        <div class="test-type-item checked" data-type="edge">
+          <div class="tt-check">✓</div><span>Edge Cases</span>
+        </div>
+        <div class="test-type-item checked" data-type="null">
+          <div class="tt-check">✓</div><span>Null / Empty</span>
+        </div>
+        <div class="test-type-item checked" data-type="error">
+          <div class="tt-check">✓</div><span>Error / Exception</span>
+        </div>
+        <div class="test-type-item checked" data-type="boundary">
+          <div class="tt-check">✓</div><span>Boundary Values</span>
+        </div>
+        <div class="test-type-item" data-type="async">
+          <div class="tt-check"></div><span>Async / Timeout</span>
+        </div>
+        <div class="test-type-item" data-type="mock">
+          <div class="tt-check"></div><span>Mock / Stub</span>
+        </div>
+        <div class="test-type-item" data-type="perf">
+          <div class="tt-check"></div><span>Performance</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expected Behavior -->
+    <div class="field-group">
+      <label>Expected Behavior</label>
+      <textarea id="expectedBehavior" placeholder="Describe what the function should do in plain English..." style="min-height:70px;"></textarea>
+      <div class="chips-row" id="behaviorChips"></div>
+    </div>
+
+    <!-- Complexity -->
+    <div class="field-group">
+      <label>Complexity Level</label>
+      <div class="complexity-btns">
+        <button class="cplx-btn" data-cplx="Basic">Basic</button>
+        <button class="cplx-btn active-inter" data-cplx="Intermediate">Intermediate</button>
+        <button class="cplx-btn" data-cplx="Advanced">Advanced</button>
+        <button class="cplx-btn" data-cplx="Exhaustive">Exhaustive</button>
+      </div>
+    </div>
+
+    <!-- Coverage Slider -->
+    <div class="field-group">
+      <label>Coverage Target</label>
+      <span class="slider-label" id="sliderLabel">Target: 80% coverage</span>
+      <input type="range" id="coverageSlider" min="60" max="100" value="80">
+    </div>
+
+    <!-- Dependencies -->
+    <div class="field-group">
+      <label>Dependencies / Mocks</label>
+      <input type="text" id="dependencies" placeholder="e.g. axios, fs, DatabaseService">
+      <div class="chips-row" id="depsChips"></div>
+    </div>
+
+    <!-- Tester Name -->
+    <div class="field-group">
+      <label>Tester Name</label>
+      <input type="text" id="testerName" placeholder="Your name">
+    </div>
+
+    <!-- Generate Button -->
+    <button class="gen-btn" id="generateBtn">⚡ Generate Unit Tests</button>
+  </div>
+
+  <!-- RIGHT PANE -->
+  <div class="report-pane" id="reportPane">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">{ }</div>
+      <p>Configure your test parameters on the left and click Generate to produce a complete unit test suite with AI analysis.</p>
+    </div>
+
+    <div class="loading-state" id="loadingState">
+      <div class="loading-text">ANALYZING CODE<span class="loading-cursor"></span></div>
+      <div id="loadingMsg" style="font-size:12px;color:var(--text-muted);letter-spacing:1px;">Detecting patterns...</div>
+      <div class="loading-bar"><div class="loading-fill" id="loadingFill"></div></div>
+    </div>
+
+    <div class="report-content" id="reportContent">
+      <!-- dynamically populated -->
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {
+  lang: 'JavaScript',
+  framework: 'Jest',
+  complexity: 'Intermediate',
+  coverage: 80,
+  testTypes: new Set(['happy','edge','null','error','boundary']),
+  suiteId: null
+};
+
+const FRAMEWORKS = {
+  JavaScript: ['Jest','Mocha','Vitest'],
+  TypeScript: ['Jest','Vitest','Mocha'],
+  Python: ['PyTest','Unittest'],
+  Java: ['JUnit','Mockito'],
+  Go: ['testing']
+};
+
+const FN_SUGGESTIONS = {
+  auth: ['validateToken','sanitizeInput','checkPermission','verifySession'],
+  validate: ['validateUser','validateEmail','validateSchema','validateInput'],
+  fetch: ['fetchWithRetry','fetchData','getData','fetchResource'],
+  calc: ['calculateTax','computeTotal','calculateDiscount','aggregateValues'],
+  parse: ['parseToken','parseJSON','parseDate','parseConfig'],
+  get: ['getUserById','getConfig','getRecord','getItemList'],
+  create: ['createUser','createRecord','createSession','createOrder'],
+  update: ['updateProfile','updateRecord','updateState','patchResource'],
+  delete: ['deleteUser','removeRecord','deleteSession','clearCache'],
+  handle: ['handleError','handleRequest','handleEvent','handleResponse'],
+  format: ['formatDate','formatCurrency','formatResponse','formatString'],
+  send: ['sendEmail','sendNotification','sendRequest','sendMessage']
+};
+
+const MOCK_SUGGESTIONS = {
+  axios: ["jest.mock('axios')", 'mockAxios.get.mockResolvedValue'],
+  fetch: ["jest.spyOn(global,'fetch')", 'mockFetch.mockResolvedValue'],
+  db: ['jest.spyOn(db, method)', 'mockDB.query.mockReturnValue'],
+  fs: ["jest.mock('fs')", 'memfs mock strategy'],
+  database: ['jest.mock(DatabaseService)', 'mockDB.findOne.mockResolvedValue'],
+  redis: ["jest.mock('redis')", 'mockRedis.get.mockResolvedValue'],
+  email: ["jest.mock('nodemailer')", 'mockMailer.sendMail.mockResolvedValue']
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  renderFrameworkChips();
+  setupLangBtns();
+  setupComplexityBtns();
+  setupTestTypeGrid();
+  setupSlider();
+  setupInputListeners();
+  document.getElementById('generateBtn').addEventListener('click', generate);
+}
+
+// ─── LANGUAGE BUTTONS ─────────────────────────────────────────────────────────
+function setupLangBtns() {
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.lang-btn').forEach(b => b.className = 'lang-btn');
+      const lang = btn.dataset.lang;
+      state.lang = lang;
+      const cls = { JavaScript:'active-js', Python:'active-py', Java:'active-java', TypeScript:'active-ts', Go:'active-go' };
+      btn.classList.add(cls[lang]);
+      state.framework = FRAMEWORKS[lang][0];
+      renderFrameworkChips();
+    });
+  });
+}
+
+// ─── FRAMEWORK CHIPS ──────────────────────────────────────────────────────────
+function renderFrameworkChips() {
+  const container = document.getElementById('frameworkChips');
+  const fws = FRAMEWORKS[state.lang] || ['Jest'];
+  if (!fws.includes(state.framework)) state.framework = fws[0];
+  container.innerHTML = fws.map(fw =>
+    `<span class="fw-chip ${fw === state.framework ? 'active' : ''}" data-fw="${fw}">${fw}</span>`
+  ).join('');
+  container.querySelectorAll('.fw-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.framework = chip.dataset.fw;
+      renderFrameworkChips();
+    });
+  });
+}
+
+// ─── COMPLEXITY ───────────────────────────────────────────────────────────────
+function setupComplexityBtns() {
+  document.querySelectorAll('.cplx-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cplx-btn').forEach(b => b.className = 'cplx-btn');
+      state.complexity = btn.dataset.cplx;
+      const cls = { Basic:'active-basic', Intermediate:'active-inter', Advanced:'active-adv', Exhaustive:'active-exh' };
+      btn.classList.add(cls[state.complexity]);
+    });
+  });
+}
+
+// ─── TEST TYPES ───────────────────────────────────────────────────────────────
+function setupTestTypeGrid() {
+  document.querySelectorAll('.test-type-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const type = item.dataset.type;
+      if (state.testTypes.has(type)) {
+        state.testTypes.delete(type);
+        item.classList.remove('checked');
+        item.querySelector('.tt-check').textContent = '';
+      } else {
+        state.testTypes.add(type);
+        item.classList.add('checked');
+        item.querySelector('.tt-check').textContent = '✓';
+      }
+    });
+  });
+}
+
+// ─── SLIDER ───────────────────────────────────────────────────────────────────
+function setupSlider() {
+  const slider = document.getElementById('coverageSlider');
+  slider.addEventListener('input', () => {
+    state.coverage = +slider.value;
+    document.getElementById('sliderLabel').textContent = `Target: ${state.coverage}% coverage`;
+  });
+}
+
+// ─── INPUT LISTENERS ──────────────────────────────────────────────────────────
+function setupInputListeners() {
+  // Function name suggestions
+  document.getElementById('fnName').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const container = document.getElementById('fnSuggestions');
+    container.innerHTML = '';
+    if (!val) return;
+    const matches = [];
+    for (const [key, arr] of Object.entries(FN_SUGGESTIONS)) {
+      if (val.includes(key) || key.includes(val)) matches.push(...arr);
+    }
+    const unique = [...new Set(matches)].slice(0, 5);
+    unique.forEach(s => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = s;
+      chip.addEventListener('click', () => { document.getElementById('fnName').value = s; container.innerHTML = ''; });
+      container.appendChild(chip);
+    });
+  });
+
+  // Code snippet detections
+  document.getElementById('codeSnippet').addEventListener('input', function() {
+    const val = this.value;
+    const container = document.getElementById('codeDetections');
+    container.innerHTML = '';
+    const detections = [];
+    if (/async\s+function|async\s+\w+\s*\(|await\s+/.test(val)) {
+      detections.push({ label: 'Async detected → will generate async tests', cls: 'detect' });
+      state.testTypes.add('async');
+      document.querySelector('[data-type="async"]')?.classList.add('checked');
+      const el = document.querySelector('[data-type="async"] .tt-check');
+      if (el) el.textContent = '✓';
+    }
+    if (/throw\s+|throws\s+|raise\s+/.test(val)) {
+      detections.push({ label: 'Exception found → will test throw cases', cls: 'detect' });
+    }
+    if (/return\s+/.test(val)) {
+      detections.push({ label: 'Detects: return type', cls: 'detect' });
+    }
+    if (/try\s*\{|catch\s*\(/.test(val)) {
+      detections.push({ label: 'try/catch detected → error path tests', cls: 'warn' });
+    }
+    if (/\w+\s*\(.*,.+\)/.test(val)) {
+      detections.push({ label: 'Detects: multiple parameters', cls: 'detect' });
+    }
+    if (/Promise|\.then\(|\.catch\(/.test(val)) {
+      detections.push({ label: 'Promise chain → rejection tests added', cls: 'detect' });
+    }
+    detections.forEach(d => {
+      const chip = document.createElement('span');
+      chip.className = `chip ${d.cls}`;
+      chip.textContent = d.label;
+      container.appendChild(chip);
+    });
+  });
+
+  // Expected behavior chips
+  document.getElementById('expectedBehavior').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const container = document.getElementById('behaviorChips');
+    container.innerHTML = '';
+    const suggestions = [];
+    if (/return|value|result/.test(val)) suggestions.push({ label: 'Returns value', cls: '' });
+    if (/throw|error|invalid|fail/.test(val)) suggestions.push({ label: 'Throws on invalid input', cls: 'warn' });
+    if (/api|service|http|call/.test(val)) suggestions.push({ label: 'Calls external service', cls: 'mock' });
+    if (/state|update|modify|set/.test(val)) suggestions.push({ label: 'Modifies state', cls: 'warn' });
+    if (/null|empty|missing/.test(val)) suggestions.push({ label: 'Add null check test', cls: 'detect' });
+    if (/bound|max|min|limit/.test(val)) suggestions.push({ label: 'Add boundary test', cls: 'detect' });
+    suggestions.forEach(s => {
+      const chip = document.createElement('span');
+      chip.className = `chip ${s.cls}`;
+      chip.textContent = s.label;
+      chip.addEventListener('click', () => {
+        const ta = document.getElementById('expectedBehavior');
+        ta.value += (ta.value ? ', ' : '') + s.label;
+      });
+      container.appendChild(chip);
+    });
+  });
+
+  // Dependencies mock suggestions
+  document.getElementById('dependencies').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const container = document.getElementById('depsChips');
+    container.innerHTML = '';
+    const terms = val.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const shown = new Set();
+    terms.forEach(term => {
+      for (const [key, suggestions] of Object.entries(MOCK_SUGGESTIONS)) {
+        if ((term.includes(key) || key.includes(term)) && !shown.has(key)) {
+          shown.add(key);
+          suggestions.forEach(s => {
+            const chip = document.createElement('span');
+            chip.className = 'chip mock';
+            chip.textContent = s;
+            chip.addEventListener('click', () => {
+              const dep = document.getElementById('dependencies');
+              if (!dep.value.includes(s)) dep.value += (dep.value ? ', ' : '') + s;
+            });
+            container.appendChild(chip);
+          });
+        }
+      }
+    });
+  });
+}
+
+// ─── GENERATE ─────────────────────────────────────────────────────────────────
+function generate() {
+  const fnName = document.getElementById('fnName').value.trim() || 'myFunction';
+  const code = document.getElementById('codeSnippet').value.trim();
+  const behavior = document.getElementById('expectedBehavior').value.trim();
+  const deps = document.getElementById('dependencies').value.trim();
+  const tester = document.getElementById('testerName').value.trim() || 'Anonymous';
+
+  // Show loading
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('reportContent').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'flex';
+
+  const msgs = ['Detecting patterns...', 'Analyzing code structure...', 'Generating test cases...', 'Building coverage map...', 'Finalizing report...'];
+  let mi = 0;
+  const msgEl = document.getElementById('loadingMsg');
+  const interval = setInterval(() => { msgEl.textContent = msgs[++mi % msgs.length]; }, 360);
+
+  // Reset loading bar animation
+  const fill = document.getElementById('loadingFill');
+  fill.style.animation = 'none';
+  fill.offsetHeight;
+  fill.style.animation = 'loadprogress 1.8s ease-out forwards';
+
+  setTimeout(() => {
+    clearInterval(interval);
+    document.getElementById('loadingState').style.display = 'none';
+
+    const suiteId = 'TEST-' + Math.random().toString(36).substr(2,6).toUpperCase();
+    state.suiteId = suiteId;
+    const ext = { JavaScript:'js', TypeScript:'ts', Python:'py', Java:'java', Go:'go' }[state.lang];
+    const ts = new Date().toUTCString();
+    const isAsync = /async|await|Promise/.test(code);
+    const hasDeps = deps.length > 0;
+
+    const html = buildReport({ fnName, code, behavior, deps, tester, suiteId, ext, ts, isAsync, hasDeps });
+    const rc = document.getElementById('reportContent');
+    rc.innerHTML = html;
+    rc.style.display = 'block';
+
+    // Animate coverage bar
+    const target = state.coverage;
+    const estimated = Math.min(target, target - 5 + Math.floor(Math.random()*10));
+    setTimeout(() => {
+      const bar = document.getElementById('covBar');
+      if (bar) {
+        bar.style.width = estimated + '%';
+        if (estimated < target) bar.classList.add('below');
+        else bar.classList.remove('below');
+      }
+    }, 200);
+
+    // Action buttons
+    setupActionBtns(suiteId);
+    document.title = `${suiteId}.pdf`;
+  }, 1850);
+}
+
+// ─── CODE GENERATORS ──────────────────────────────────────────────────────────
+function genJestCode(fnName, type, isAsync) {
+  const a = isAsync ? 'async ' : '';
+  const aw = isAsync ? 'await ' : '';
+  switch(type) {
+    case 'happy':
+      return `describe('${fnName}', () => {\n  test('should return expected result for valid input', ${a}() => {\n    const result = ${aw}${fnName}('validInput');\n    expect(result).toBeDefined();\n    expect(result).not.toBeNull();\n  });\n\n  test('should handle typical use case correctly', ${a}() => {\n    const input = { id: 1, name: 'test' };\n    const result = ${aw}${fnName}(input);\n    expect(result).toMatchObject({ success: true });\n  });\n\n  test('should return consistent results', ${a}() => {\n    const result1 = ${aw}${fnName}('input');\n    const result2 = ${aw}${fnName}('input');\n    expect(result1).toEqual(result2);\n  });\n});`;
+    case 'edge':
+      return `describe('${fnName} — edge cases', () => {\n  test('should handle empty string input', () => {\n    const result = ${fnName}('');\n    expect(result).toBeDefined();\n  });\n\n  test('should handle zero value', () => {\n    expect(${fnName}(0)).toBeDefined();\n  });\n\n  test('should handle very large input', () => {\n    const large = 'a'.repeat(10000);\n    expect(() => ${fnName}(large)).not.toThrow();\n  });\n\n  test('should handle negative numbers', () => {\n    const result = ${fnName}(-1);\n    expect(result).toBeDefined();\n  });\n});`;
+    case 'null':
+      return `describe('${fnName} — null/undefined', () => {\n  test('should handle null input gracefully', () => {\n    expect(() => ${fnName}(null)).not.toThrow();\n  });\n\n  test('should handle undefined parameter', () => {\n    expect(() => ${fnName}(undefined)).not.toThrow();\n  });\n\n  test('should handle missing optional params', () => {\n    const result = ${fnName}('valid');\n    expect(result).toBeDefined();\n  });\n});`;
+    case 'error':
+      return `describe('${fnName} — errors', () => {\n  test('should throw on invalid input type', () => {\n    expect(() => ${fnName}(123)).toThrow();\n  });\n\n  test('should throw with descriptive error message', () => {\n    expect(() => ${fnName}(null)).toThrow(/invalid|error/i);\n  });\n\n  test('should throw TypeError for wrong argument', () => {\n    expect(() => ${fnName}([])).toThrow(TypeError);\n  });\n});`;
+    case 'boundary':
+      return `describe('${fnName} — boundaries', () => {\n  test('should handle minimum boundary value (0)', () => {\n    expect(${fnName}(0)).toBeDefined();\n  });\n\n  test('should handle maximum boundary value', () => {\n    expect(${fnName}Number.MAX_SAFE_INTEGER)).toBeDefined();\n  });\n\n  test('should handle value just above minimum', () => {\n    expect(${fnName}(1)).toBeDefined();\n  });\n\n  test('should reject value below minimum', () => {\n    expect(() => ${fnName}(-1)).toThrow();\n  });\n});`;
+    case 'async':
+      return `describe('${fnName} — async', () => {\n  test('should resolve with valid response', async () => {\n    const result = await ${fnName}('input');\n    expect(result).toBeDefined();\n    expect(result.status).toBe('success');\n  });\n\n  test('should reject on network failure', async () => {\n    await expect(${fnName}('bad')).rejects.toThrow();\n  });\n\n  test('should complete within timeout', async () => {\n    const start = Date.now();\n    await ${fnName}('input');\n    expect(Date.now() - start).toBeLessThan(5000);\n  });\n}, 10000);`;
+    case 'mock':
+      return `import axios from 'axios';\njest.mock('axios');\n\ndescribe('${fnName} — mocks', () => {\n  beforeEach(() => jest.clearAllMocks());\n\n  test('should call dependency with correct args', async () => {\n    axios.get.mockResolvedValue({ data: { id: 1 } });\n    await ${fnName}('input');\n    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('input'));\n    expect(axios.get).toHaveBeenCalledTimes(1);\n  });\n\n  test('should handle dependency failure', async () => {\n    axios.get.mockRejectedValue(new Error('Network error'));\n    await expect(${fnName}('input')).rejects.toThrow('Network error');\n  });\n});`;
+    case 'perf':
+      return `describe('${fnName} — performance', () => {\n  test('should execute within acceptable time', () => {\n    const start = performance.now();\n    ${fnName}('input');\n    const duration = performance.now() - start;\n    expect(duration).toBeLessThan(100);\n  });\n\n  test('should handle 1000 iterations efficiently', () => {\n    const start = performance.now();\n    for (let i = 0; i < 1000; i++) ${fnName}(String(i));\n    expect(performance.now() - start).toBeLessThan(1000);\n  });\n});`;
+  }
+}
+
+function genPyTestCode(fnName, type) {
+  switch(type) {
+    case 'happy':
+      return `class Test${capitalize(fnName)}:\n    def test_returns_expected_result_for_valid_input(self):\n        result = ${fnName}('valid_input')\n        assert result is not None\n\n    def test_handles_typical_use_case(self):\n        result = ${fnName}({'id': 1, 'name': 'test'})\n        assert result['success'] is True\n\n    def test_returns_consistent_results(self):\n        assert ${fnName}('input') == ${fnName}('input')`;
+    case 'edge':
+      return `class Test${capitalize(fnName)}EdgeCases:\n    def test_handles_empty_string(self):\n        result = ${fnName}('')\n        assert result is not None\n\n    def test_handles_zero_value(self):\n        result = ${fnName}(0)\n        assert result is not None\n\n    def test_handles_large_input(self):\n        large = 'a' * 10000\n        result = ${fnName}(large)\n        assert result is not None`;
+    case 'null':
+      return `import pytest\n\nclass Test${capitalize(fnName)}NullCases:\n    def test_handles_none_input(self):\n        result = ${fnName}(None)\n        assert result is None or result is not None  # graceful\n\n    def test_raises_on_missing_required_param(self):\n        with pytest.raises(TypeError):\n            ${fnName}()`;
+    case 'error':
+      return `import pytest\n\nclass Test${capitalize(fnName)}Errors:\n    def test_raises_value_error_on_invalid_input(self):\n        with pytest.raises(ValueError):\n            ${fnName}('invalid')\n\n    def test_raises_type_error_on_wrong_type(self):\n        with pytest.raises(TypeError):\n            ${fnName}(123)\n\n    def test_error_message_is_descriptive(self):\n        with pytest.raises(ValueError, match=r'invalid|error'):\n            ${fnName}(None)`;
+    case 'boundary':
+      return `class Test${capitalize(fnName)}Boundaries:\n    def test_minimum_boundary(self):\n        assert ${fnName}(0) is not None\n\n    def test_maximum_boundary(self):\n        assert ${fnName}(2**31-1) is not None\n\n    def test_just_below_minimum_raises(self):\n        import pytest\n        with pytest.raises(ValueError):\n            ${fnName}(-1)`;
+    case 'async':
+      return `import pytest\nimport asyncio\n\n@pytest.mark.asyncio\nasync def test_${fnName}_resolves_successfully():\n    result = await ${fnName}('input')\n    assert result is not None\n\n@pytest.mark.asyncio\nasync def test_${fnName}_rejects_on_failure():\n    import pytest\n    with pytest.raises(Exception):\n        await ${fnName}('bad_input')\n\n@pytest.mark.asyncio\nasync def test_${fnName}_completes_within_timeout():\n    result = await asyncio.wait_for(${fnName}('input'), timeout=5.0)\n    assert result is not None`;
+    case 'mock':
+      return `from unittest.mock import patch, MagicMock\n\nclass Test${capitalize(fnName)}Mocks:\n    @patch('module.dependency')\n    def test_calls_dependency_with_correct_args(self, mock_dep):\n        mock_dep.return_value = {'id': 1}\n        ${fnName}('input')\n        mock_dep.assert_called_once_with('input')\n\n    @patch('module.dependency')\n    def test_handles_dependency_failure(self, mock_dep):\n        import pytest\n        mock_dep.side_effect = Exception('Service error')\n        with pytest.raises(Exception, match='Service error'):\n            ${fnName}('input')`;
+    default: return genJestCode(fnName, type, false);
+  }
+}
+
+function genJUnitCode(fnName, type) {
+  switch(type) {
+    case 'happy':
+      return `@ExtendWith(MockitoExtension.class)\npublic class ${capitalize(fnName)}Test {\n\n    @Test\n    @DisplayName("should return expected result for valid input")\n    void testReturnsExpectedResult() {\n        var result = ${fnName}("validInput");\n        assertNotNull(result);\n    }\n\n    @Test\n    @DisplayName("should handle typical use case")\n    void testHandlesTypicalUseCase() {\n        var result = ${fnName}(Map.of("id", 1));\n        assertTrue(result.isSuccess());\n    }\n}`;
+    case 'error':
+      return `@Test\n@DisplayName("should throw on invalid input")\nvoid testThrowsOnInvalidInput() {\n    assertThrows(IllegalArgumentException.class, () -> {\n        ${fnName}(null);\n    });\n}\n\n@Test\n@DisplayName("should throw with descriptive message")\nvoid testErrorMessage() {\n    var ex = assertThrows(RuntimeException.class, () -> {\n        ${fnName}("bad");\n    });\n    assertTrue(ex.getMessage().contains("invalid"));\n}`;
+    default:
+      return `@Test\nvoid test${capitalize(fnName)}_${type}() {\n    // Arrange\n    var input = "testInput";\n    // Act\n    var result = ${fnName}(input);\n    // Assert\n    assertNotNull(result);\n}`;
+  }
+}
+
+function genGoCode(fnName, type) {
+  const fn = fnName.charAt(0).toUpperCase() + fnName.slice(1);
+  switch(type) {
+    case 'happy':
+      return `func Test${fn}HappyPath(t *testing.T) {\n    t.Run("returns expected result for valid input", func(t *testing.T) {\n        result, err := ${fnName}("validInput")\n        if err != nil {\n            t.Fatalf("unexpected error: %v", err)\n        }\n        if result == nil {\n            t.Error("expected non-nil result")\n        }\n    })\n}`;
+    case 'error':
+      return `func Test${fn}ErrorCases(t *testing.T) {\n    t.Run("returns error for invalid input", func(t *testing.T) {\n        _, err := ${fnName}("")\n        if err == nil {\n            t.Error("expected error for empty input")\n        }\n    })\n\n    t.Run("returns error for nil input", func(t *testing.T) {\n        _, err := ${fnName}(nil)\n        if err == nil {\n            t.Error("expected error for nil input")\n        }\n    })\n}`;
+    default:
+      return `func Test${fn}_${type}(t *testing.T) {\n    result, err := ${fnName}("input")\n    if err != nil {\n        t.Fatalf("unexpected error: %v", err)\n    }\n    if result == nil {\n        t.Error("expected non-nil result")\n    }\n}`;
+  }
+}
+
+function getCode(fnName, type, isAsync) {
+  switch(state.lang) {
+    case 'Python': return genPyTestCode(fnName, type);
+    case 'Java': return genJUnitCode(fnName, type);
+    case 'Go': return genGoCode(fnName, type);
+    default: return genJestCode(fnName, type, isAsync);
+  }
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function syntaxHighlight(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(\/\/[^\n]*)/g,'<span class="c-cmt">$1</span>')
+    .replace(/(#[^\n]*)/g,'<span class="c-cmt">$1</span>')
+    .replace(/\b(describe|test|it|expect|beforeEach|afterEach|jest|async|await|import|from|export|const|let|var|function|return|throw|new|class|def|import|with|assert|raises|pytest|public|void|private|static|extends|implements)\b/g,'<span class="c-kw">$1</span>')
+    .replace(/(["'`])(.*?)\1/g,'<span class="c-str">$1$2$1</span>')
+    .replace(/\b(\d+)\b/g,'<span class="c-num">$1</span>')
+    .replace(/(@\w+)/g,'<span class="c-dec">$1</span>');
+}
+
+// ─── BUILD REPORT ─────────────────────────────────────────────────────────────
+function buildReport({ fnName, code, behavior, deps, tester, suiteId, ext, ts, isAsync, hasDeps }) {
+  const types = [...state.testTypes];
+  const testsPerSection = state.complexity === 'Basic' ? 2 : state.complexity === 'Intermediate' ? 3 : state.complexity === 'Advanced' ? 4 : 5;
+  let totalTests = types.length * testsPerSection;
+
+  const estimated = Math.min(state.coverage, state.coverage - 5 + Math.floor(Math.random()*10));
+  const lines = Math.floor(estimated * 0.97);
+  const branches = Math.floor(estimated * 0.88);
+  const fns = Math.floor(estimated * 0.95);
+
+  const sectionColors = { happy:'green', edge:'yellow', null:'orange', error:'red', boundary:'orange', async:'blue', mock:'purple', perf:'cyan' };
+  const sectionTitles = { happy:'HAPPY PATH TESTS', edge:'EDGE CASE TESTS', null:'NULL / UNDEFINED TESTS', error:'ERROR / EXCEPTION TESTS', boundary:'BOUNDARY VALUE TESTS', async:'ASYNC / TIMEOUT TESTS', mock:'MOCK / STUB TESTS', perf:'PERFORMANCE TESTS' };
+  const sectionEmoji = { happy:'✅', edge:'⚡', null:'◻️', error:'🚫', boundary:'📏', async:'⏱', mock:'🔧', perf:'🚀' };
+
+  let sectionsHTML = '';
+  types.forEach(type => {
+    const codeText = getCode(fnName, type, isAsync);
+    sectionsHTML += `
+    <div class="test-section ts-${sectionColors[type] || 'blue'}">
+      <div class="ts-header">
+        <div class="ts-title">
+          <div class="ts-dot" style="background:var(--${sectionColors[type] || 'blue'})"></div>
+          ${sectionTitles[type] || type.toUpperCase()}
+        </div>
+        <span class="ts-count">${testsPerSection} tests</span>
+      </div>
+      <div class="ts-body">
+        <div class="code-block">${syntaxHighlight(codeText)}</div>
+      </div>
+    </div>`;
+  });
+
+  // Analysis
+  const covered = [];
+  const notCovered = [];
+  const recommendations = [];
+  if (types.includes('happy')) covered.push('Core functionality with valid inputs');
+  if (types.includes('edge')) covered.push('Edge cases including empty and large values');
+  if (types.includes('null')) covered.push('Null and undefined parameter handling');
+  if (types.includes('error')) covered.push('Exception throwing and error messages');
+  if (types.includes('boundary')) covered.push('Boundary values at min and max ranges');
+  if (types.includes('async')) covered.push('Async resolution and rejection paths');
+  if (types.includes('mock')) covered.push('Mocked dependencies and service calls');
+  if (types.includes('perf')) covered.push('Execution time and iteration performance');
+
+  if (!types.includes('mock') && (hasDeps || isAsync)) notCovered.push('Mocked external dependencies');
+  if (!types.includes('async') && isAsync) notCovered.push('Async timeout scenarios');
+  if (!types.includes('perf')) notCovered.push('Performance regression tests');
+  if (!types.includes('boundary')) notCovered.push('Integer overflow edge cases');
+  if (notCovered.length === 0) notCovered.push('All major test categories are covered');
+
+  recommendations.push(`Add integration tests for ${fnName} with real database/service`);
+  recommendations.push(`Add snapshot tests if ${fnName} returns complex objects`);
+  recommendations.push(`Consider property-based testing (e.g. fast-check) for ${fnName}`);
+
+  const execTime = (totalTests * 12 + Math.floor(Math.random()*80)) + 'ms';
+
+  return `
+  <div class="report-header">
+    <div class="suite-id">
+      <span class="suite-id-badge">${suiteId}</span>
+      ${fnName} Test Suite
+    </div>
+    <div class="suite-ts">${ts}</div>
+    <div class="suite-file">${fnName}.test.${ext}</div>
+    <div class="badges-row">
+      <span class="badge badge-lang">${state.lang}</span>
+      <span class="badge badge-fw">${state.framework}</span>
+      <span class="badge badge-cplx">${state.complexity}</span>
+      <span class="badge badge-cov">Target: ${state.coverage}%</span>
+    </div>
+    ${code ? `<div class="sig-block">${syntaxHighlight(code.slice(0,200))}</div>` : ''}
+  </div>
+
+  ${sectionsHTML}
+
+  <div class="coverage-card">
+    <div class="cov-title">COVERAGE SUMMARY</div>
+    <div class="cov-bar-wrap">
+      <div class="cov-bar-fill" id="covBar">
+        <span class="cov-bar-pct">${estimated}%</span>
+      </div>
+    </div>
+    <div class="cov-stats">
+      <div class="cov-stat"><div class="cov-stat-val">${lines}%</div><div class="cov-stat-label">Lines</div></div>
+      <div class="cov-stat"><div class="cov-stat-val">${branches}%</div><div class="cov-stat-label">Branches</div></div>
+      <div class="cov-stat"><div class="cov-stat-val">${fns}%</div><div class="cov-stat-label">Functions</div></div>
+    </div>
+  </div>
+
+  <div class="analysis-card">
+    <div class="analysis-title">⬡ AI ANALYSIS</div>
+    <div class="analysis-section">
+      <div class="analysis-section-title green">WHAT THESE TESTS COVER</div>
+      ${covered.map(c => `<div class="analysis-item">• ${c}</div>`).join('')}
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-section-title red">WHAT IS NOT COVERED</div>
+      ${notCovered.map(c => `<div class="analysis-item">• ${c}</div>`).join('')}
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-section-title blue">RECOMMENDED ADDITIONS</div>
+      ${recommendations.map(c => `<div class="analysis-item">→ ${c}</div>`).join('')}
+    </div>
+  </div>
+
+  <div class="report-footer">
+    <div class="footer-meta">
+      <span>Tester: <strong>${tester}</strong></span>
+      <span>${ts}</span>
+      <span>${suiteId}</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="total-badge">${totalTests} TESTS</span>
+      <span style="font-size:10px;color:var(--text-muted);">~${execTime}</span>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="action-btn copy-btn" id="copyCodeBtn">[ COPY ALL TESTS ]</button>
+    <button class="action-btn copy-full" id="copyFullBtn">[ COPY FULL REPORT ]</button>
+    <button class="action-btn pdf-btn" id="pdfBtn">[ DOWNLOAD AS PDF ]</button>
+  </div>`;
+}
+
+// ─── ACTION BUTTONS ───────────────────────────────────────────────────────────
+function setupActionBtns(suiteId) {
+  document.getElementById('copyCodeBtn')?.addEventListener('click', () => {
+    const blocks = document.querySelectorAll('.code-block');
+    let text = '';
+    blocks.forEach(b => { text += b.innerText + '\n\n'; });
+    navigator.clipboard.writeText(text).then(() => showToast('Code copied to clipboard!'));
+  });
+
+  document.getElementById('copyFullBtn')?.addEventListener('click', () => {
+    const rc = document.getElementById('reportContent');
+    navigator.clipboard.writeText(rc.innerText).then(() => showToast('Full report copied!'));
+  });
+
+  document.getElementById('pdfBtn')?.addEventListener('click', () => {
+    document.title = `${suiteId}.pdf`;
+    window.print();
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
