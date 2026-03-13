@@ -139,4 +139,4 @@ Please provide:
 7. Performance considerations
 ```
 
-### For More  DEtails Visit: https://techworldwithsahana.substack.com/p/5-ai-prompts-every-developer-should
+### For More  DEtails Visit: [5 AI Prompts Every Developer Should Save (and Actually Use)](https://techworldwithsahana.substack.com/p/5-ai-prompts-every-developer-should)
