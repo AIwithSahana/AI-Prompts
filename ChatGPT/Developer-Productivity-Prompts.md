@@ -69,4 +69,4 @@ Explain indexes or performance considerations.
 - **Performance considerations** before deploying to production
 
 ---
-### For More Details Visit: https://techworldwithsahana.substack.com/p/still-working-the-same-way-you-did
+### For More Details Read: [Still Working the Same Way You Did Last Year?](https://techworldwithsahana.substack.com/p/still-working-the-same-way-you-did)
