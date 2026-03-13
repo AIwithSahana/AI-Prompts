@@ -27,4 +27,4 @@ Please help me with:
 Provide a production-ready structured plan, not just high-level advice.
 ```
 
-### For More Details Visit: [Stop Spending Months on a Business Idea That Will Never Work](https://open.substack.com/pub/techworldwithsahana/p/stop-spending-months-on-a-business?r=78cfr0&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true)
+### For More Details Read: [Stop Spending Months on a Business Idea That Will Never Work](https://open.substack.com/pub/techworldwithsahana/p/stop-spending-months-on-a-business?r=78cfr0&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true)
