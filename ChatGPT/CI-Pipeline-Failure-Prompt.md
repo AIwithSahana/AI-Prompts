@@ -1,5 +1,7 @@
 # PROMPT:
 ----------------------
+
+```
 A developer just committed code to my repository and the CI pipeline failed.  
 Here are the details of the failure:
 
@@ -12,6 +14,7 @@ Can you help me:
 1. Identify the likely cause of the CI failure.
 2. Suggest steps to fix it.
 3. Recommend best practices to prevent similar CI failures in the future.
+```
 
 ----------------------------
 
