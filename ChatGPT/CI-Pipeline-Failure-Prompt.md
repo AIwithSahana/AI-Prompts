@@ -18,4 +18,4 @@ Can you help me:
 
 ----------------------------
 
-### For More Details Visit: https://techworldwithsahana.substack.com/p/day-1-ci-pipeline-fails-after-code
+### For More Details Visit: [CI Pipeline Fails After Code Commit - Use AI for Day-to-Day Work](https://techworldwithsahana.substack.com/p/day-1-ci-pipeline-fails-after-code)

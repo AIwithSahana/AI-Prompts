@@ -62,4 +62,4 @@ The summaries should make recruiters immediately want to read the rest of the re
 
 ---------------
 
-### For More Details Visit: https://techworldwithsahana.substack.com/p/2026-job-market-is-brutal-if-your
+### For More Details Read: [2026 Job Market Is Brutal — If Your Resume Is Weak, You’re Invisible](https://techworldwithsahana.substack.com/p/2026-job-market-is-brutal-if-your)
