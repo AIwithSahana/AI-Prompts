@@ -1,6 +1,7 @@
 ## PROMPT
 ----------------------
 
+```
 I’m a [Role – Backend Dev / Frontend Dev / Full Stack].
 I’ve been assigned to implement the following feature in our production system:
 Feature Name: [Name]
@@ -24,3 +25,4 @@ Please help me with:
 6.	Testing strategy (unit, integration).
 7.	Performance considerations at scale.
 Provide a production-ready structured plan, not just high-level advice.
+```
