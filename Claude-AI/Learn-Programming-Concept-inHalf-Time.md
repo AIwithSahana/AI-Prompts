@@ -30,4 +30,4 @@ This prompt is structured to give you exactly what a great mentor would.
 
 ---------------------
 
-### For More Details Visit: https://techworldwithsahana.substack.com/p/learn-any-programming-concept-in
+### For More Details Visit: [Learn Any Programming Concept in Half the Time](https://techworldwithsahana.substack.com/p/learn-any-programming-concept-in)
