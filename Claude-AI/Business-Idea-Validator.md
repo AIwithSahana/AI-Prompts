@@ -18,7 +18,6 @@ Analyze:
 6. Improvements
 7. Go / No-Go recommendation with score out of 10
 ```
-----------
 
 ### What You Get
 
@@ -36,6 +35,6 @@ This is not a generic AI response. This is a Interactive session with a structur
 
 • GO or NO-GO with a score out of 10 — a clear verdict so you know exactly where you stand.
 
-
+----------
 
 ### For More Details Visit: https://techworldwithsahana.substack.com/publish/post/190510469?back=%2Fpublish%2Fposts%2Fscheduled
