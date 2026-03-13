@@ -1,5 +1,7 @@
 # PROMPT
 ---------------
+
+```
 Act as a senior recruiter, ATS optimization expert, and executive resume writer with 15+ years of hiring experience across global companies.
 
 Your task is to create 3 high-impact resume summary versions that are optimized for Applicant Tracking Systems (ATS) and designed to capture recruiter attention within seconds.
@@ -56,6 +58,7 @@ WRITING STYLE
 
 GOAL
 The summaries should make recruiters immediately want to read the rest of the resume.
+```
 
 ---------------
 
