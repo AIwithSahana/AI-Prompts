@@ -138,3 +138,5 @@ Please provide:
 6. Testing strategy
 7. Performance considerations
 ```
+
+### For More  DEtails Visit: https://techworldwithsahana.substack.com/p/5-ai-prompts-every-developer-should
