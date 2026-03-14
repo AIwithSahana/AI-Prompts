@@ -7,8 +7,8 @@ The AI-Prompts project is designed to provide a collection of prompts tailored f
 The repository contains the following structure:
 
 
-AI-Prompts/
-├── ChatGPT/
+AI-Prompts /
+├── ChatGPT /
 │   ├── [5-AI-Prompts-For-Developer.md](https://github.com/AIwithSahana/AI-Prompts/blob/main/ChatGPT/5-AI-Prompts-For-Developer.md)
 │   ├── CI-Pipeline-Failure-Prompt.md
 │   └── Resume-Summary-Template.md
